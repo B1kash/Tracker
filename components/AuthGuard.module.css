@@ -1,0 +1,135 @@
+.loadingScreen {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.authContainer {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    padding: 1rem;
+}
+
+.authCard {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 3rem;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    animation: slideUp 0.4s ease-out forwards;
+}
+
+.logo {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+}
+
+.authTitle {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.authSubtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
+.authForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    text-align: left;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.inputGroup label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.inputGroup input {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.inputGroup input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.submitBtn {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 0.9rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.submitBtn:hover {
+    background: var(--accent-primary-hover);
+    transform: translateY(-2px);
+}
+
+.errorMessage {
+    background: rgba(220, 53, 69, 0.1);
+    color: #ff4b4b;
+    padding: 0.8rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    text-align: center;
+}
+
+.toggleBtn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.toggleBtn:hover {
+    color: var(--text-primary);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

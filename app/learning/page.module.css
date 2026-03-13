@@ -1,0 +1,360 @@
+.page {
+    animation: fadeIn 0.4s ease;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+/* Today's Learning Section */
+.todaySection {
+    margin-bottom: 32px;
+}
+
+.todayCards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.todayCard {
+    background: linear-gradient(145deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.04));
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+}
+
+.todayCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.todayMood {
+    font-size: 0.85rem;
+}
+
+.todayLearned {
+    display: flex;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.todayDoubts,
+.todayTakeaways {
+    display: flex;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.todayIcon {
+    flex-shrink: 0;
+    margin-top: 3px;
+    color: var(--accent-purple);
+}
+
+.todayLabel {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.todayTime {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+/* Goals */
+.goalsList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.goalCard {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    transition: all var(--transition-base);
+}
+
+.goalCard:hover {
+    border-color: var(--border-accent);
+}
+
+.goalHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.goalInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.goalTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.goalTitle {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.resourceLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--accent-cyan);
+    transition: color var(--transition-fast);
+    margin-bottom: 10px;
+}
+
+.resourceLink:hover {
+    color: var(--accent-purple);
+}
+
+.progressRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progressText {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    min-width: 36px;
+    text-align: right;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.goalActions {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+/* Logs Timeline */
+.logsSection {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.logsList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.logEntry {
+    background: rgba(99, 102, 241, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    transition: border-color var(--transition-fast);
+}
+
+.logEntry:hover {
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.logHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.logDate {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-purple);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.logMeta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.logMood {
+    font-size: 0.8rem;
+}
+
+.logTime {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.logBody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.logSection {
+    display: flex;
+    gap: 10px;
+}
+
+.logSectionIcon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(139, 92, 246, 0.1);
+    color: var(--accent-purple);
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.iconDoubts {
+    background: rgba(244, 63, 94, 0.1);
+    color: var(--accent-rose);
+}
+
+.iconTakeaways {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--accent-amber);
+}
+
+.logSectionLabel {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.logSectionText {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.showLogsBtn {
+    display: block;
+    margin-top: 12px;
+    background: none;
+    border: none;
+    color: var(--accent-purple);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: opacity var(--transition-fast);
+}
+
+.showLogsBtn:hover {
+    opacity: 0.7;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.logFormGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .headerRow {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .goalCard {
+        padding: 16px;
+    }
+
+    .goalHeader {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .goalActions {
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .goalTitle {
+        font-size: 0.95rem;
+    }
+
+    .todayCard {
+        padding: 14px 16px;
+    }
+
+    .todayLearned {
+        font-size: 0.85rem;
+    }
+
+    .todayDoubts,
+    .todayTakeaways {
+        font-size: 0.78rem;
+    }
+
+    .logEntry {
+        padding: 12px 14px;
+    }
+
+    .logSectionText {
+        font-size: 0.82rem;
+    }
+
+    .logFormGrid {
+        grid-template-columns: 1fr;
+    }
+}

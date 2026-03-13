@@ -1,0 +1,146 @@
+.page {
+    animation: fadeIn 0.4s ease;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.habitList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.habitCard {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.habitCard:hover {
+    border-color: var(--border-accent);
+    background: var(--bg-card-hover);
+}
+
+.habitCardDone {
+    border-color: rgba(16, 185, 129, 0.3);
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.05), var(--bg-card));
+}
+
+.habitCardDone .habitTitle {
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
+.checkBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border-color);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.checkBtn:hover {
+    border-color: var(--accent-emerald);
+}
+
+.checkBtnDone {
+    background: var(--accent-emerald);
+    border-color: var(--accent-emerald);
+    color: white;
+}
+
+.habitInfo {
+    flex: 1;
+}
+
+.habitTitle {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: all var(--transition-fast);
+}
+
+.habitActions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.habitCard:hover .habitActions {
+    opacity: 1;
+}
+
+/* Management Top Bar */
+.manageBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(139, 92, 246, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+}
+
+.manageTitle {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-purple);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .headerRow {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .habitActions {
+        opacity: 1;
+    }
+
+    .manageBar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .manageBar .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

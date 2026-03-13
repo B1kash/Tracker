@@ -1,0 +1,126 @@
+.page {
+    animation: fadeIn 0.4s ease;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.dateGroups {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+
+
+
+.dateHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.dateBadge {
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--accent-purple);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+.contentList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.statusBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.contentInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.contentTitle {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.contentMeta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.contentNotes {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.5;
+}
+
+.contentActions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.content-card:hover .contentActions,
+:global(.content-card):hover .contentActions {
+    opacity: 1;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .headerRow {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .contentActions {
+        opacity: 1;
+    }
+
+    .contentTitle {
+        font-size: 0.88rem;
+    }
+
+    .dateGroups {
+        gap: 20px;
+    }
+}

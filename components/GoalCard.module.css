@@ -1,0 +1,103 @@
+.card {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-accent);
+    box-shadow: var(--shadow-glow-purple);
+    transform: translateY(-2px);
+}
+
+.cardAccent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    opacity: 0.7;
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.titleRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.checkBtn {
+    background: none;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.checked {
+    color: var(--accent-emerald);
+}
+
+.unchecked {
+    color: var(--text-muted);
+}
+
+.checkBtn:hover .unchecked {
+    color: var(--accent-emerald);
+}
+
+.title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.completedTitle {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.card:hover .actions {
+    opacity: 1;
+}
+
+.cardBody {
+    margin-bottom: 12px;
+}
+
+.progressWrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progressText {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 36px;
+    text-align: right;
+}

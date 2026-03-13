@@ -1,0 +1,89 @@
+# Personal Life Tracker - Next.js App
+
+A premium, dark-mode personal life tracker to manage goals across **Gym**, **Learning**, and **Content Creation** categories — with progress visualization, streak tracking, and local storage persistence.
+
+## Proposed Changes
+
+### Project Setup
+
+#### [NEW] Next.js project at `C:\Users\bikas\.gemini\antigravity\scratch\life-tracker`
+- Initialize with `npx create-next-app@latest` (App Router, no Tailwind, JavaScript)
+- Install `react-icons` for iconography
+
+---
+
+### Design System & Layout
+
+#### [NEW] `src/app/globals.css`
+- CSS custom properties for dark theme (deep navy/indigo palette with neon accent gradients)
+- Glassmorphism utility classes, card styles, animated progress bars
+- Google Font: **Inter** for clean modern typography
+- Smooth micro-animations and hover transitions
+
+#### [NEW] `src/app/layout.js`
+- Root layout with sidebar navigation + main content area
+- Links: Dashboard, Gym, Learning, Content Creation
+
+#### [NEW] `src/components/Sidebar.js`
+- Fixed left sidebar with icon+label navigation, active state highlighting, glassmorphism background
+
+---
+
+### Pages
+
+#### [NEW] `src/app/page.js` — Dashboard
+- Overview cards showing total goals, completion %, and streaks per category
+- Animated circular progress rings per category
+- Recent activity feed
+
+#### [NEW] `src/app/gym/page.js` — Gym Goals
+- Track workouts: exercise name, sets, reps, weight, completion status
+- Weekly workout calendar view
+- Add/edit/delete goals via modal
+
+#### [NEW] `src/app/learning/page.js` — Learning Goals
+- Track topics/courses: title, resource link, progress %, status (Not Started / In Progress / Completed)
+- Progress bars per item
+
+#### [NEW] `src/app/content/page.js` — Content Creation Goals
+- Track content pieces: title, platform (YouTube, Blog, Twitter, etc.), status (Idea / Drafting / Published)
+- Kanban-style columns for status visualization
+
+---
+
+### Shared Components
+
+| Component | Purpose |
+|---|---|
+| `GoalCard.js` | Reusable card with title, progress, actions |
+| `ProgressRing.js` | Animated SVG circular progress |
+| `AddGoalModal.js` | Modal form for adding/editing goals |
+| `StatsCard.js` | Dashboard stat card with icon + value |
+| `EmptyState.js` | Friendly empty state illustration |
+
+---
+
+### Data & Persistence
+
+#### [NEW] `src/lib/storage.js`
+- Utility wrapping `localStorage` for CRUD operations on goals
+- Separate keys per category: `gym_goals`, `learning_goals`, `content_goals`
+- Auto-generate IDs with `crypto.randomUUID()`
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- No unit tests planned (UI-heavy app with local storage). Verification is visual.
+
+### Browser Verification
+1. Run `npm run dev` and open the app in the browser
+2. Verify the dashboard renders with empty state
+3. Navigate to each category page (Gym, Learning, Content)
+4. Add a goal in each category and verify it persists on page refresh
+5. Edit and delete a goal, confirm updates
+6. Return to dashboard and verify stats update correctly
+
+### Manual Verification
+- After implementation, I will open the running app in the browser tool, navigate all pages, add/edit/delete goals, and take screenshots to confirm everything works.

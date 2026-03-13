@@ -1,141 +1,149 @@
 .page {
-  --background: #fafafa;
-  --foreground: #fff;
+  animation: fadeIn 0.4s ease;
+}
 
-  --text-primary: #000;
-  --text-secondary: #666;
+.progressSection {
+  margin-bottom: 36px;
+}
 
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-  --button-secondary-border: #ebebeb;
-
+.ringsContainer {
   display: flex;
-  min-height: 100vh;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.ringCard {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 26px 34px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-geist-sans);
-  background-color: var(--background);
+  transition: all var(--transition-base);
 }
 
-.main {
-  display: flex;
-  min-height: 100vh;
-  width: 100%;
-  max-width: 800px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  background-color: var(--foreground);
-  padding: 120px 60px;
+.ringCard:hover {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
 }
 
-.intro {
+.activitySection {
+  margin-bottom: 36px;
+}
+
+.activityList {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  gap: 24px;
-}
-
-.intro h1 {
-  max-width: 320px;
-  font-size: 40px;
-  font-weight: 600;
-  line-height: 48px;
-  letter-spacing: -2.4px;
-  text-wrap: balance;
-  color: var(--text-primary);
-}
-
-.intro p {
-  max-width: 440px;
-  font-size: 18px;
-  line-height: 32px;
-  text-wrap: balance;
-  color: var(--text-secondary);
-}
-
-.intro a {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.ctas {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  max-width: 440px;
-  gap: 16px;
-  font-size: 14px;
-}
-
-.ctas a {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 128px;
-  border: 1px solid transparent;
-  transition: 0.2s;
-  cursor: pointer;
-  width: fit-content;
-  font-weight: 500;
-}
-
-a.primary {
-  background: var(--text-primary);
-  color: var(--background);
   gap: 8px;
 }
 
-a.secondary {
-  border-color: var(--button-secondary-border);
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
 }
 
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
+.activityItem:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-accent);
+}
+
+.activityIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(139, 92, 246, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-purple);
+  flex-shrink: 0;
+}
+
+.activityInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.activityTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.activityMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activityDetail {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.activityTime {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
 
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
+  to {
+    opacity: 1;
   }
 }
 
-@media (max-width: 600px) {
-  .main {
-    padding: 48px 24px;
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .ringsContainer {
+    gap: 12px;
   }
 
-  .intro {
-    gap: 16px;
+  .ringCard {
+    padding: 18px 20px;
+    flex: 1;
+    min-width: 0;
   }
 
-  .intro h1 {
-    font-size: 32px;
-    line-height: 40px;
-    letter-spacing: -1.92px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
+  .ringCard:hover {
+    transform: none;
   }
 
-  .page {
-    --background: #000;
-    --foreground: #000;
+  .activityItem {
+    padding: 12px 14px;
+    gap: 10px;
+  }
 
-    --text-primary: #ededed;
-    --text-secondary: #999;
+  .activityIcon {
+    width: 32px;
+    height: 32px;
+  }
 
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-    --button-secondary-border: #1a1a1a;
+  .activityTitle {
+    font-size: 0.85rem;
+  }
+
+  .activityTime {
+    font-size: 0.72rem;
   }
 }
