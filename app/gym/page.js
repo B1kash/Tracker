@@ -200,6 +200,13 @@ export default function GymPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        const photosToday = photos.filter(p => p.date === dateStr);
+        if (photosToday.length >= 3) {
+            alert('Maximum 3 photos per day allowed.');
+            e.target.value = null;
+            return;
+        }
+
         try {
             setUploading(true);
             const base64 = await compressImage(file, 800, 0.6); // Compress aggressively 
@@ -535,29 +542,41 @@ export default function GymPage() {
                     <div className={styles.photoUploadBanner}>
                         <div className={styles.photoUploadInfo}>
                             <h3 className={styles.photoUploadTitle}>Progress Updates</h3>
-                            <p className={styles.photoUploadDesc}>Upload a photo to visually track your physique over time. Images are heavily compressed and saved locally.</p>
+                            <p className={styles.photoUploadDesc}>Upload a photo to visually track your physique over time. Images are heavily compressed and saved to the cloud (limit 3 per day).</p>
                         </div>
-                        <label className={`btn btn-primary ${uploading || isFuture ? styles.uploadingBtn : ''}`} style={isFuture ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
+                        <label className={`btn btn-primary ${uploading || isFuture || photos.filter(p => p.date === dateStr).length >= 3 ? styles.uploadingBtn : ''}`} style={isFuture || photos.filter(p => p.date === dateStr).length >= 3 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
                             <IoCloudUploadOutline size={18} /> {uploading ? 'Processing...' : 'Upload Photo'}
-                            <input type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploading || isFuture} style={{ display: 'none' }} />
+                            <input type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploading || isFuture || photos.filter(p => p.date === dateStr).length >= 3} style={{ display: 'none' }} />
                         </label>
                     </div>
 
                     {photos.length === 0 ? (
                         <EmptyState
                             title="No progress photos"
-                            message="Take your first physique update photo today. Don't worry, it stays purely local on your device."
+                            message="Take your first physique update photo today. It will be securely uploaded to the cloud."
                         />
                     ) : (
-                        <div className={styles.photoGallery}>
-                            {photos.slice().reverse().map((photo) => (
-                                <div key={photo._id || photo.id} className={styles.photoCard}>
-                                    <img src={photo.base64} alt={`Progress on ${photo.date}`} className={styles.photoImg} />
-                                    <div className={styles.photoOverlay}>
-                                        <div className={styles.photoDateBadge}>{photo.date}</div>
-                                        <button className={styles.photoDeleteBtn} onClick={async () => { await deleteGymPhoto(photo._id || photo.id); loadData(); }} disabled={isFuture}>
-                                            <IoTrashOutline size={16} />
-                                        </button>
+                        <div className={styles.photosTimeline}>
+                            {Object.entries(
+                                photos.reduce((acc, p) => {
+                                    if (!acc[p.date]) acc[p.date] = [];
+                                    acc[p.date].push(p);
+                                    return acc;
+                                }, {})
+                            ).sort((a, b) => b[0].localeCompare(a[0])).map(([dateKey, dailyPhotos]) => (
+                                <div key={dateKey} className={styles.photoDateGroup}>
+                                    <h4 className={styles.photoDateHeader}>{new Date(dateKey).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</h4>
+                                    <div className={styles.photoGallery}>
+                                        {dailyPhotos.map((photo) => (
+                                            <div key={photo._id || photo.id} className={styles.photoCard}>
+                                                <img src={photo.url || photo.base64} alt={`Progress on ${photo.date}`} className={styles.photoImg} />
+                                                <div className={styles.photoOverlay}>
+                                                    <button className={styles.photoDeleteBtn} onClick={async () => { await deleteGymPhoto(photo._id || photo.id); await loadData(); }} disabled={isFuture}>
+                                                        <IoTrashOutline size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}

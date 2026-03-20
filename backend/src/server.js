@@ -29,6 +29,8 @@ app.use('/api/bodyweight', require('./routes/bodyWeightRoutes'));
 app.use('/api/templates', require('./routes/templateRoutes'));
 app.use('/api/push', require('./routes/pushRoutes'));
 app.use('/api/goals', require('./routes/goalRoutes'));
+app.use('/api/learning', require('./routes/learningRoutes'));
+app.use('/api/content', require('./routes/contentRoutes'));
 
 // Start cron jobs
 require('./cron/pushCron');

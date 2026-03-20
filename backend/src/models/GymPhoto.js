@@ -10,7 +10,7 @@ const GymPhotoSchema = new mongoose.Schema({
         type: String, // YYYY-MM-DD format
         required: true
     },
-    base64: {
+    url: {
         type: String,
         required: true
     }
