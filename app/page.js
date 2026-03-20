@@ -5,6 +5,7 @@ import { IoBarbell, IoBookOutline, IoVideocamOutline, IoTrophyOutline, IoTrendin
 import StatsCard from '@/components/StatsCard';
 import ProgressRing from '@/components/ProgressRing';
 import EmptyState from '@/components/EmptyState';
+import WeeklyQuests from '@/components/WeeklyQuests';
 import { getStats, getRecentActivity } from '@/lib/storage';
 import styles from './page.module.css';
 
@@ -152,6 +153,8 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+
+          <WeeklyQuests />
         </>
       )}
     </div>

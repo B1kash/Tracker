@@ -14,6 +14,8 @@ import {
 } from '@/lib/storage';
 import { triggerGamificationUpdate } from '@/lib/events';
 import { compressImage } from './Compressor';
+import OneRMChart from '@/components/OneRMChart';
+import MacroRings from '@/components/MacroRings';
 import styles from './page.module.css';
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -58,7 +60,7 @@ export default function GymPage() {
     // Cardio form
     const [cardioForm, setCardioForm] = useState({ type: 'Running', duration: '', distance: '', calories: '' });
     // Diet form
-    const [dietForm, setDietForm] = useState({ meal: 'Breakfast', food: '', calories: '', protein: '', notes: '' });
+    const [dietForm, setDietForm] = useState({ meal: 'Breakfast', food: '', calories: '', protein: '', carbs: '', fats: '', notes: '' });
 
     const dateStr = getDateStr(selectedDate);
     const weekDates = getWeekDates(selectedDate);
@@ -150,11 +152,18 @@ export default function GymPage() {
     const handleToggleSet = async (exId, setId) => {
         const ex = exercises.find((e) => (e._id || e.id) === exId);
         if (!ex) return;
+        const targetSet = ex.sets.find(s => (s._id || s.id) === setId);
+        const willBeCompleted = !(targetSet?.completed);
         const newSets = ex.sets.map((s) => (s._id || s.id) === setId ? { ...s, completed: !s.completed } : s);
         setWorkout(prev => ({ ...prev, exercises: prev.exercises.map(e => (e._id || e.id) === exId ? { ...e, sets: newSets } : e) }));
 
         if (setDebounceTimer.current) clearTimeout(setDebounceTimer.current);
         await updateExerciseSets(dateStr, exId, newSets);
+
+        // Trigger rest timer popup when completing a set
+        if (willBeCompleted && typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('start_rest_timer'));
+        }
     };
 
     // === CARDIO HANDLERS ===
@@ -171,7 +180,7 @@ export default function GymPage() {
         e.preventDefault();
         if (!dietForm.food) return;
         addDietLog({ ...dietForm, date: dateStr });
-        setDietForm({ meal: 'Breakfast', food: '', calories: '', protein: '', notes: '' });
+        setDietForm({ meal: 'Breakfast', food: '', calories: '', protein: '', carbs: '', fats: '', notes: '' });
         setDietEntries(getDietByDate(dateStr));
     };
 
@@ -254,6 +263,7 @@ export default function GymPage() {
             {/* ========== EXERCISES TAB ========== */}
             {activeTab === 'exercises' && (
                 <>
+                    <OneRMChart allWorkouts={allWorkouts} />
                     <form onSubmit={handleAddExercise} className={styles.quickAdd}>
                         <input className="form-input" placeholder="Add exercise (e.g. Bench Press, Squats...)" value={newExercise} onChange={(e) => setNewExercise(e.target.value)} disabled={isFuture} />
                         <button type="submit" className="btn btn-primary btn-sm" disabled={isFuture}><IoAdd size={18} /> Add</button>
@@ -354,6 +364,7 @@ export default function GymPage() {
             {/* ========== DIET TAB ========== */}
             {activeTab === 'diet' && (
                 <>
+                    <MacroRings dietEntries={dietEntries} />
                     <form onSubmit={handleAddDiet} className={styles.dietForm}>
                         <div className={styles.dietFormRow}>
                             <div className="form-group" style={{ width: '130px' }}>
@@ -373,6 +384,14 @@ export default function GymPage() {
                             <div className="form-group" style={{ width: '90px' }}>
                                 <label className="form-label">Protein</label>
                                 <input className="form-input" placeholder="40g" value={dietForm.protein} onChange={(e) => setDietForm({ ...dietForm, protein: e.target.value })} />
+                            </div>
+                            <div className="form-group" style={{ width: '80px' }}>
+                                <label className="form-label">Carbs</label>
+                                <input className="form-input" placeholder="60g" value={dietForm.carbs} onChange={(e) => setDietForm({ ...dietForm, carbs: e.target.value })} />
+                            </div>
+                            <div className="form-group" style={{ width: '70px' }}>
+                                <label className="form-label">Fats</label>
+                                <input className="form-input" placeholder="15g" value={dietForm.fats} onChange={(e) => setDietForm({ ...dietForm, fats: e.target.value })} />
                             </div>
                             <button type="submit" className="btn btn-primary btn-sm" style={{ alignSelf: 'flex-end' }} disabled={isFuture}>
                                 <IoAdd size={18} /> Log

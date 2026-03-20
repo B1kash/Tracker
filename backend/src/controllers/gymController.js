@@ -2,7 +2,17 @@ const GymWorkout = require('../models/GymWorkout');
 const GymPhoto = require('../models/GymPhoto');
 const { updateQuestProgress } = require('./gamificationController');
 
-// ... (getWorkouts)
+// @desc    Get gym workouts
+// @route   GET /api/gym/workouts
+// @access  Private
+const getWorkouts = async (req, res) => {
+    try {
+        const workouts = await GymWorkout.find({ user: req.user.id });
+        res.status(200).json(workouts);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 
 // @desc    Save workout for date
 // @route   POST /api/gym/workouts

@@ -1,3 +1,5 @@
+const User = require('../models/User');
+
 const DEFAULT_QUESTS = [
     { title: 'Workout Warrior', target: 4, xpReward: 500, type: 'gym' },
     { title: 'Cardio King', target: 3, xpReward: 300, type: 'cardio' },

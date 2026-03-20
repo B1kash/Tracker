@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import styles from './AuthGuard.module.css';
 import { useRouter } from 'next/navigation';
 import LevelUpCelebration from './LevelUpCelebration';
+import RestTimer from './RestTimer';
 
 export default function AuthGuard({ children }) {
     const [token, setToken] = useState(null);
@@ -110,6 +111,7 @@ export default function AuthGuard({ children }) {
     return (
         <>
             <LevelUpCelebration />
+            <RestTimer />
             {children}
         </>
     );

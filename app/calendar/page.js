@@ -1,25 +1,42 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IoChevronBack, IoChevronForward, IoBarbell, IoBookOutline, IoVideocamOutline, IoCheckboxOutline } from 'react-icons/io5';
-import EmptyState from '@/components/EmptyState';
+import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { getCalendarData } from '@/lib/storage';
 import styles from './page.module.css';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// Score activity types -> number 0..4 (heatmap intensity)
+function getActivityScore(activities) {
+    if (!activities || activities.length === 0) return 0;
+    return Math.min(activities.length, 4);
+}
+
+// Colors for heatmap: 0=empty, 1=low, 2=med, 3=high, 4=max
+const HEAT_COLORS = {
+    dark: ['rgba(30, 41, 59, 0.3)', 'rgba(139, 92, 246, 0.25)', 'rgba(139, 92, 246, 0.5)', 'rgba(139, 92, 246, 0.75)', 'rgba(139, 92, 246, 1)'],
+    light: ['rgba(241, 245, 249, 0.5)', '#ddd6fe', '#a78bfa', '#7c3aed', '#5b21b6']
+};
+
 export default function CalendarPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [calendarData, setCalendarData] = useState({});
     const [mounted, setMounted] = useState(false);
+    const [theme, setTheme] = useState('dark');
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
     useEffect(() => {
+        setTheme(document.documentElement.dataset.theme || 'dark');
+    }, []);
+
+    useEffect(() => {
         async function fetchCalendar() {
-            setCalendarData(await getCalendarData(year, month + 1));
+            const data = await getCalendarData(year, month + 1);
+            setCalendarData(data || {});
             setMounted(true);
         }
         fetchCalendar();
@@ -27,45 +44,56 @@ export default function CalendarPage() {
 
     if (!mounted) return null;
 
-    const prevMonth = () => {
-        setCurrentDate(new Date(year, month - 1, 1));
-    };
+    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+    const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+    const getFirstDay = (y, m) => new Date(y, m, 1).getDay();
 
-    const nextMonth = () => {
-        setCurrentDate(new Date(year, month + 1, 1));
-    };
-
-    const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-    const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+    const colors = HEAT_COLORS[theme] || HEAT_COLORS.dark;
 
     const renderCalendarGrid = () => {
         const daysInMonth = getDaysInMonth(year, month);
-        const firstDay = getFirstDayOfMonth(year, month);
+        const firstDay = getFirstDay(year, month);
         const days = [];
 
-        // Empty cells for days before the 1st
         for (let i = 0; i < firstDay; i++) {
-            days.push(<div key={`empty-${i}`} className={styles.emptyCell}></div>);
+            days.push(<div key={`empty-${i}`} className={styles.emptyCell} />);
         }
 
         const today = new Date();
         const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
-        // Days of the month
         for (let i = 1; i <= daysInMonth; i++) {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             const activities = calendarData[dateStr] || [];
+            const score = getActivityScore(activities);
             const isToday = isCurrentMonth && today.getDate() === i;
+            const bg = colors[score];
+
+            const tooltip = activities.length
+                ? activities.join(', ')
+                : 'No activity';
+
+            const activityIcons = {
+                gym: '🏋️', learning: '📚', content: '🎬', habit: '✅'
+            };
 
             days.push(
-                <div key={i} className={`${styles.calendarCell} ${isToday ? styles.todayCell : ''}`}>
+                <div
+                    key={i}
+                    className={`${styles.calendarCell} ${isToday ? styles.todayCell : ''}`}
+                    style={{ background: bg, border: isToday ? '2px solid var(--accent-purple)' : '' }}
+                    title={`${dateStr}: ${tooltip}`}
+                >
                     <span className={styles.cellNumber}>{i}</span>
-                    <div className={styles.indicators}>
-                        {activities.includes('gym') && <span className={`${styles.dot} ${styles.dotGym}`} title="Gym" />}
-                        {activities.includes('learning') && <span className={`${styles.dot} ${styles.dotLearning}`} title="Learning" />}
-                        {activities.includes('content') && <span className={`${styles.dot} ${styles.dotContent}`} title="Content" />}
-                        {activities.includes('habit') && <span className={`${styles.dot} ${styles.dotHabit}`} title="Habit" />}
-                    </div>
+                    {score > 0 && (
+                        <div className={styles.indicators}>
+                            {activities.includes('gym') && <span title="Gym">{activityIcons.gym}</span>}
+                            {activities.includes('habit') && <span title="Habits">{activityIcons.habit}</span>}
+                            {activities.includes('learning') && <span title="Learning">{activityIcons.learning}</span>}
+                            {activities.includes('content') && <span title="Content">{activityIcons.content}</span>}
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -73,7 +101,20 @@ export default function CalendarPage() {
         return days;
     };
 
-    const totalActiveDays = Object.keys(calendarData).length;
+    const totalActiveDays = Object.keys(calendarData).filter(d => {
+        const [y, m] = d.split('-').map(Number);
+        return y === year && (m - 1) === month;
+    }).length;
+
+    const maxStreak = (() => {
+        let best = 0, cur = 0;
+        for (let i = 1; i <= getDaysInMonth(year, month); i++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            if (calendarData[dateStr]?.length > 0) { cur++; best = Math.max(best, cur); }
+            else { cur = 0; }
+        }
+        return best;
+    })();
 
     return (
         <div className={styles.page}>
@@ -82,7 +123,7 @@ export default function CalendarPage() {
                     <h1 className="page-title">
                         <span className="page-title-gradient">Calendar</span>
                     </h1>
-                    <p className="page-subtitle">Your activity overview across all dimensions</p>
+                    <p className="page-subtitle">Your activity heatmap — the deeper the color, the more you did</p>
                 </div>
             </div>
 
@@ -97,19 +138,13 @@ export default function CalendarPage() {
                     </button>
                 </div>
 
+                {/* Heatmap legend */}
                 <div className={styles.legend}>
-                    <div className={styles.legendItem}>
-                        <span className={`${styles.dot} ${styles.dotGym}`} /> Gym
-                    </div>
-                    <div className={styles.legendItem}>
-                        <span className={`${styles.dot} ${styles.dotLearning}`} /> Learning
-                    </div>
-                    <div className={styles.legendItem}>
-                        <span className={`${styles.dot} ${styles.dotContent}`} /> Content
-                    </div>
-                    <div className={styles.legendItem}>
-                        <span className={`${styles.dot} ${styles.dotHabit}`} /> Habits
-                    </div>
+                    <span className={styles.legendLabel}>Less</span>
+                    {colors.map((c, i) => (
+                        <div key={i} className={styles.legendSwatch} style={{ background: c }} />
+                    ))}
+                    <span className={styles.legendLabel}>More</span>
                 </div>
 
                 <div className={styles.calendarGrid}>
@@ -120,7 +155,15 @@ export default function CalendarPage() {
                 </div>
 
                 <div className={styles.calendarFooter}>
-                    <p>Total active days this month: <strong>{totalActiveDays}</strong></p>
+                    <div className={styles.footerStat}>
+                        <span className={styles.footerNum}>{totalActiveDays}</span>
+                        <span>active days</span>
+                    </div>
+                    <div className={styles.footerDivider} />
+                    <div className={styles.footerStat}>
+                        <span className={styles.footerNum}>{maxStreak}</span>
+                        <span>best streak this month</span>
+                    </div>
                 </div>
             </div>
         </div>

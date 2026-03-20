@@ -22,7 +22,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .monthTitle {
@@ -33,52 +33,63 @@
     letter-spacing: -0.02em;
 }
 
+/* Heatmap legend */
 .legend {
     display: flex;
-    gap: 16px;
+    align-items: center;
+    gap: 6px;
     margin-bottom: 20px;
-    flex-wrap: wrap;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-color);
 }
 
-.legendItem {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
+.legendLabel {
+    font-size: 0.72rem;
+    color: var(--text-muted);
     font-weight: 500;
+}
+
+.legendSwatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
 .calendarGrid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
+    gap: 6px;
     margin-bottom: 20px;
 }
 
 .dayHeaderCell {
     text-align: center;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding-bottom: 12px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    padding-bottom: 10px;
 }
 
 .calendarCell {
     aspect-ratio: 1;
-    background: rgba(30, 41, 59, 0.3);
-    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 8px;
+    padding: 6px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    transition: all var(--transition-fast);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: default;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.calendarCell:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.25);
+    z-index: 1;
+    position: relative;
 }
 
 .emptyCell {
@@ -86,25 +97,15 @@
     background: transparent;
 }
 
-[data-theme="light"] .calendarCell {
-    background: rgba(241, 245, 249, 0.5);
-}
-
-.calendarCell:hover {
-    border-color: var(--border-accent);
-    background: rgba(139, 92, 246, 0.05);
-}
-
 .todayCell {
-    border-color: var(--accent-purple);
-    background: rgba(139, 92, 246, 0.08) !important;
+    outline: 2px solid var(--accent-purple);
+    outline-offset: 1px;
 }
 
 .cellNumber {
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    color: var(--text-primary);
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: rgba(255,255,255,0.7);
 }
 
 .todayCell .cellNumber {
@@ -112,87 +113,63 @@
     font-weight: 800;
 }
 
+[data-theme="light"] .cellNumber {
+    color: rgba(15,23,42,0.7);
+}
+
 .indicators {
     display: flex;
-    gap: 4px;
+    gap: 1px;
     flex-wrap: wrap;
     justify-content: flex-end;
+    font-size: 0.55rem;
+    line-height: 1;
 }
 
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.dotGym {
-    background: var(--accent-rose);
-    box-shadow: 0 0 6px rgba(244, 63, 94, 0.4);
-}
-
-.dotLearning {
-    background: var(--accent-purple);
-    box-shadow: 0 0 6px rgba(139, 92, 246, 0.4);
-}
-
-.dotContent {
-    background: var(--accent-cyan);
-    box-shadow: 0 0 6px rgba(6, 182, 212, 0.4);
-}
-
-.dotHabit {
-    background: var(--accent-emerald);
-    box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
-}
-
+/* Footer stats */
 .calendarFooter {
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
     padding-top: 16px;
     border-top: 1px solid var(--border-color);
 }
 
-.calendarFooter strong {
+.footerStat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.footerNum {
+    font-size: 1.6rem;
+    font-weight: 800;
     color: var(--text-primary);
     font-family: 'Plus Jakarta Sans', sans-serif;
+    line-height: 1;
+}
+
+.footerDivider {
+    width: 1px;
+    height: 36px;
+    background: var(--border-color);
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 @media (max-width: 768px) {
-    .calendarCard {
-        padding: 16px;
-    }
-
-    .calendarGrid {
-        gap: 4px;
-    }
-
-    .calendarCell {
-        padding: 4px;
-        border-radius: var(--radius-sm);
-    }
-
-    .cellNumber {
-        font-size: 0.75rem;
-    }
-
-    .dot {
-        width: 6px;
-        height: 6px;
-    }
-
-    .legend {
-        gap: 10px;
-        justify-content: center;
-    }
+    .calendarCard { padding: 16px; }
+    .calendarGrid { gap: 3px; }
+    .calendarCell { padding: 3px; border-radius: var(--radius-sm); }
+    .cellNumber { font-size: 0.6rem; }
+    .indicators { display: none; }
+    .legend { gap: 4px; }
+    .legendSwatch { width: 12px; height: 12px; }
 }
