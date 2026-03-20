@@ -22,15 +22,16 @@ const createTemplate = async (req, res) => {
     }
 };
 
-// @route DELETE /api/templates/:id
 const deleteTemplate = async (req, res) => {
     try {
-        const template = await WorkoutTemplate.findById(req.params.id);
-        if (!template) return res.status(404).json({ message: 'Not found' });
-        if (template.user.toString() !== req.user.id) return res.status(401).json({ message: 'Not authorized' });
-        await template.deleteOne();
+        const template = await WorkoutTemplate.findOne({ _id: req.params.id, user: req.user.id });
+        if (!template) {
+             return res.status(404).json({ message: 'Template not found or unauthorized' });
+        }
+        await WorkoutTemplate.findByIdAndDelete(req.params.id);
         res.status(200).json({ id: req.params.id });
     } catch (error) {
+        console.error("Delete template error:", error);
         res.status(500).json({ message: 'Server error' });
     }
 };

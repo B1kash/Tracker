@@ -256,8 +256,17 @@ export default function GymPage() {
     };
 
     const handleDeleteTemplate = async (id) => {
-        if (!window.confirm('Delete this template?')) return;
-        await deleteWorkoutTemplate(id);
+        if (!id) return;
+        
+        // Optimistic UI Removal
+        setTemplates(prev => prev.filter(t => (t._id || t.id) !== id));
+        
+        try {
+            await deleteWorkoutTemplate(id);
+        } catch (e) {
+            console.error(e);
+            alert("Template deletion failed: " + e.message);
+        }
         setTemplates(await getWorkoutTemplates());
     };
 
@@ -385,7 +394,7 @@ export default function GymPage() {
                                         </div>
                                         <div className={styles.exerciseActions}>
                                             <button className="btn btn-secondary btn-sm" onClick={() => handleApplyTemplate(tpl)} disabled={isFuture}>Apply</button>
-                                            <button className="btn-icon" onClick={() => handleDeleteTemplate(tpl._id)}><IoTrashOutline size={16} /></button>
+                                            <button type="button" className="btn-icon" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteTemplate(tpl._id || tpl.id); }}><IoTrashOutline size={16} /></button>
                                         </div>
                                     </div>
                                     <div className={styles.setRow} style={{ padding: '0 12px 12px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
