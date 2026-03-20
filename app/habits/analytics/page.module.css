@@ -1,0 +1,93 @@
+.page {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.habitsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.analyticsCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+}
+
+.habitName {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 20px;
+}
+
+.statsRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.statBox {
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.statValue {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    margin: 8px 0 2px;
+}
+
+.statLabel {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.heatmapContainer {
+    margin-top: 10px;
+}
+
+.heatmapLabel {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.heatmapGrid {
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 4px;
+}
+
+.heatmapCell {
+    aspect-ratio: 1;
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.heatmapCellDone {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}

@@ -1,0 +1,103 @@
+.container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    margin-bottom: 30px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.goalsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.goalCard {
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.goalTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.goalTitle {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.progressContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.progressBar {
+    height: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.progressText {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.goalBottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.deadlineInfo {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.updateValue {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.addForm {
+    background: var(--bg-body);
+    padding: 16px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    margin-bottom: 16px;
+}

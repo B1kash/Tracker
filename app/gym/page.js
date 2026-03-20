@@ -3,14 +3,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     IoAdd, IoTrashOutline, IoCheckmarkSharp, IoAddCircleOutline, IoCloseCircleOutline,
-    IoBarbell, IoWalk, IoFastFoodOutline, IoFlameOutline, IoTimerOutline, IoImageOutline, IoCloudUploadOutline
+    IoBarbell, IoWalk, IoFastFoodOutline, IoFlameOutline, IoTimerOutline, IoImageOutline, IoCloudUploadOutline,
+    IoListOutline, IoSaveOutline
 } from 'react-icons/io5';
 import EmptyState from '@/components/EmptyState';
 import {
-    getWorkoutByDate, addExerciseToDate, removeExerciseFromDate, updateExerciseSets, getGymWorkouts,
+    getWorkoutByDate, addExerciseToDate, removeExerciseFromDate, updateExerciseSets, getGymWorkouts, saveWorkoutForDate,
     getCardioByDate, addCardioLog, deleteCardioLog,
     getDietByDate, addDietLog, deleteDietLog,
-    getGymPhotos, addGymPhoto, deleteGymPhoto
+    getGymPhotos, addGymPhoto, deleteGymPhoto,
+    getWorkoutTemplates, createWorkoutTemplate, deleteWorkoutTemplate
 } from '@/lib/storage';
 import { triggerGamificationUpdate } from '@/lib/events';
 import { compressImage } from './Compressor';
@@ -22,6 +24,7 @@ const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const TABS = [
     { id: 'exercises', label: 'Exercises', icon: IoBarbell },
+    { id: 'templates', label: 'Templates', icon: IoListOutline },
     { id: 'cardio', label: 'Cardio', icon: IoWalk },
     { id: 'diet', label: 'Diet', icon: IoFastFoodOutline },
     { id: 'photos', label: 'Photos', icon: IoImageOutline },
@@ -53,6 +56,8 @@ export default function GymPage() {
     const [photos, setPhotos] = useState([]);
     const [newExercise, setNewExercise] = useState('');
     const [allWorkouts, setAllWorkouts] = useState([]);
+    const [templates, setTemplates] = useState([]);
+    const [templateName, setTemplateName] = useState('');
     const [mounted, setMounted] = useState(false);
     const [uploading, setUploading] = useState(false);
     const setDebounceTimer = useRef(null);
@@ -70,9 +75,10 @@ export default function GymPage() {
     const loadData = useCallback(async () => {
         setWorkout(await getWorkoutByDate(dateStr));
         setAllWorkouts(await getGymWorkouts());
-        setCardioEntries(getCardioByDate(dateStr));
-        setDietEntries(getDietByDate(dateStr));
+        setCardioEntries(await getCardioByDate(dateStr));
+        setDietEntries(await getDietByDate(dateStr));
         setPhotos(await getGymPhotos());
+        setTemplates(await getWorkoutTemplates());
     }, [dateStr]);
 
     useEffect(() => {
@@ -167,21 +173,26 @@ export default function GymPage() {
     };
 
     // === CARDIO HANDLERS ===
-    const handleAddCardio = (e) => {
+    const handleAddCardio = async (e) => {
         e.preventDefault();
         if (!cardioForm.duration) return;
-        addCardioLog({ ...cardioForm, date: dateStr, completed: true });
+        // Optimistic update
+        const temp = { _id: mockObjectId(), ...cardioForm, date: dateStr, completed: true };
+        setCardioEntries(prev => [...prev, temp]);
         setCardioForm({ type: 'Running', duration: '', distance: '', calories: '' });
-        setCardioEntries(getCardioByDate(dateStr));
+        await addCardioLog({ ...cardioForm, date: dateStr, completed: true });
+        setCardioEntries(await getCardioByDate(dateStr));
     };
 
     // === DIET HANDLERS ===
-    const handleAddDiet = (e) => {
+    const handleAddDiet = async (e) => {
         e.preventDefault();
         if (!dietForm.food) return;
-        addDietLog({ ...dietForm, date: dateStr });
+        const temp = { _id: mockObjectId(), ...dietForm, date: dateStr };
+        setDietEntries(prev => [...prev, temp]);
         setDietForm({ meal: 'Breakfast', food: '', calories: '', protein: '', carbs: '', fats: '', notes: '' });
-        setDietEntries(getDietByDate(dateStr));
+        await addDietLog({ ...dietForm, date: dateStr });
+        setDietEntries(await getDietByDate(dateStr));
     };
 
     // === PHOTOS HANDLERS ===
@@ -202,6 +213,52 @@ export default function GymPage() {
             setUploading(false);
             e.target.value = null; // Reset input
         }
+    };
+
+    // === TEMPLATE HANDLERS ===
+    const handleSaveTemplate = async (e) => {
+        e.preventDefault();
+        if (!workout?.exercises?.length || !templateName.trim()) return;
+        const payload = {
+            name: templateName,
+            exercises: workout.exercises.map(ex => ({
+                name: ex.name,
+                defaultSets: ex.sets.length,
+                defaultReps: ex.sets[0]?.reps || 10,
+                defaultWeight: ex.sets[0]?.weight || ''
+            }))
+        };
+        await createWorkoutTemplate(payload);
+        setTemplateName('');
+        setTemplates(await getWorkoutTemplates());
+        alert('Template saved successfully!');
+    };
+
+    const handleApplyTemplate = async (tpl) => {
+        if (isFuture) return;
+        if (!window.confirm(`Apply "${tpl.name}" to today's workout?`)) return;
+
+        const currentExs = workout?.exercises || [];
+        const newExs = tpl.exercises.map(tplEx => {
+            const defaultSets = Array.from({ length: tplEx.defaultSets }).map(() => ({
+                reps: tplEx.defaultReps, weight: tplEx.defaultWeight, completed: false, _id: mockObjectId()
+            }));
+            return { name: tplEx.name, sets: defaultSets };
+        });
+
+        const merged = [...currentExs, ...newExs];
+        
+        // Optimistic UI update immediately
+        setWorkout({ ...workout, exercises: merged, date: dateStr });
+        
+        await saveWorkoutForDate(dateStr, merged);
+        setWorkout(await getWorkoutByDate(dateStr)); // Refresh ids
+    };
+
+    const handleDeleteTemplate = async (id) => {
+        if (!window.confirm('Delete this template?')) return;
+        await deleteWorkoutTemplate(id);
+        setTemplates(await getWorkoutTemplates());
     };
 
     const totalSets = exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
@@ -304,6 +361,43 @@ export default function GymPage() {
                 </>
             )}
 
+            {/* ========== TEMPLATES TAB ========== */}
+            {activeTab === 'templates' && (
+                <>
+                    <h3 className={styles.sectionTitle}>Workout Templates</h3>
+                    <p className={styles.sectionSubtitle}>Load a saved routine, or save today's workout as a new template.</p>
+                    
+                    <form onSubmit={handleSaveTemplate} className={styles.quickAdd}>
+                        <input className="form-input" placeholder="Save today's workout as... (e.g. Push Day A)" value={templateName} onChange={(e) => setTemplateName(e.target.value)} disabled={exercises.length === 0} required />
+                        <button type="submit" className="btn btn-primary btn-sm" disabled={exercises.length === 0}><IoSaveOutline size={18} /> Save</button>
+                    </form>
+
+                    {templates.length === 0 ? (
+                        <div className="empty-inline">No templates saved yet. Create your workout then save it here!</div>
+                    ) : (
+                        <div className={styles.exerciseList}>
+                            {templates.map((tpl) => (
+                                <div key={tpl._id} className={styles.exerciseCard}>
+                                    <div className={styles.exerciseHeader}>
+                                        <div className={styles.exerciseNameWrapper} style={{ gap: '10px' }}>
+                                            <IoListOutline size={20} style={{ color: 'var(--accent-purple)' }} />
+                                            <span className={styles.exerciseName}>{tpl.name}</span>
+                                        </div>
+                                        <div className={styles.exerciseActions}>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => handleApplyTemplate(tpl)} disabled={isFuture}>Apply</button>
+                                            <button className="btn-icon" onClick={() => handleDeleteTemplate(tpl._id)}><IoTrashOutline size={16} /></button>
+                                        </div>
+                                    </div>
+                                    <div className={styles.setRow} style={{ padding: '0 12px 12px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                        Includes: {tpl.exercises.map(e => e.name).join(', ')}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </>
+            )}
+
             {/* ========== CARDIO TAB ========== */}
             {activeTab === 'cardio' && (
                 <>
@@ -338,18 +432,18 @@ export default function GymPage() {
                     ) : (
                         <div className={styles.cardioList}>
                             {cardioEntries.map((entry) => (
-                                <div key={entry.id} className={styles.cardioCard}>
-                                    <div className={styles.cardioIcon}><IoWalk size={22} /></div>
-                                    <div className={styles.cardioInfo}>
-                                        <div className={styles.cardioType}>{entry.type}</div>
-                                        <div className={styles.cardioMeta}>
-                                            {entry.duration && <span className={styles.cardioStat}><IoTimerOutline size={14} /> {entry.duration}</span>}
-                                            {entry.distance && <span className={styles.cardioStat}>📏 {entry.distance}</span>}
-                                            {entry.calories && <span className={styles.cardioStat}><IoFlameOutline size={14} /> {entry.calories} cal</span>}
+                                    <div key={entry._id || entry.id} className={styles.cardioCard}>
+                                        <div className={styles.cardioIcon}><IoWalk size={22} /></div>
+                                        <div className={styles.cardioInfo}>
+                                            <div className={styles.cardioType}>{entry.type}</div>
+                                            <div className={styles.cardioMeta}>
+                                                {entry.duration && <span className={styles.cardioStat}><IoTimerOutline size={14} /> {entry.duration}</span>}
+                                                {entry.distance && <span className={styles.cardioStat}>📏 {entry.distance}</span>}
+                                                {entry.calories && <span className={styles.cardioStat}><IoFlameOutline size={14} /> {entry.calories} cal</span>}
+                                            </div>
                                         </div>
+                                        <button className="btn-icon" onClick={async () => { await deleteCardioLog(entry._id || entry.id); setCardioEntries(await getCardioByDate(dateStr)); }} disabled={isFuture}><IoTrashOutline size={16} /></button>
                                     </div>
-                                    <button className="btn-icon" onClick={() => { deleteCardioLog(entry.id); setCardioEntries(getCardioByDate(dateStr)); }} disabled={isFuture}><IoTrashOutline size={16} /></button>
-                                </div>
                             ))}
                             {totalCardioMins > 0 && (
                                 <div className={styles.cardioSummary}>
@@ -405,7 +499,7 @@ export default function GymPage() {
                         <>
                             <div className={styles.dietList}>
                                 {dietEntries.map((entry) => (
-                                    <div key={entry.id} className={styles.dietCard}>
+                                    <div key={entry._id || entry.id} className={styles.dietCard}>
                                         <div className={styles.dietMealBadge}>{entry.meal}</div>
                                         <div className={styles.dietInfo}>
                                             <div className={styles.dietFood}>{entry.food}</div>
@@ -414,7 +508,7 @@ export default function GymPage() {
                                                 {entry.protein && <span className="badge badge-cyan">{entry.protein} protein</span>}
                                             </div>
                                         </div>
-                                        <button className="btn-icon" onClick={() => { deleteDietLog(entry.id); setDietEntries(getDietByDate(dateStr)); }} disabled={isFuture}><IoTrashOutline size={16} /></button>
+                                        <button className="btn-icon" onClick={async () => { await deleteDietLog(entry._id || entry.id); setDietEntries(await getDietByDate(dateStr)); }} disabled={isFuture}><IoTrashOutline size={16} /></button>
                                     </div>
                                 ))}
                             </div>

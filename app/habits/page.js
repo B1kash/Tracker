@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IoCheckmarkSharp, IoTrashOutline, IoAdd, IoSettingsOutline } from 'react-icons/io5';
+import { IoCheckmarkSharp, IoTrashOutline, IoAdd, IoSettingsOutline, IoAnalyticsOutline } from 'react-icons/io5';
 import EmptyState from '@/components/EmptyState';
 import AddGoalModal from '@/components/AddGoalModal';
+import Link from 'next/link';
 import { getHabits, addHabit, deleteHabit, getHabitLogByDate, toggleHabitLog } from '@/lib/storage';
 import { triggerGamificationUpdate } from '@/lib/events';
 import styles from './page.module.css';
@@ -87,9 +88,14 @@ export default function HabitsPage() {
                     </p>
                 </div>
 
-                <button className="btn btn-ghost" onClick={() => setIsManageModalOpen(true)}>
-                    <IoSettingsOutline size={18} /> Manage Habits
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <Link href="/habits/analytics" className="btn btn-secondary">
+                        <IoAnalyticsOutline size={18} /> Analytics
+                    </Link>
+                    <button className="btn btn-ghost" onClick={() => setIsManageModalOpen(true)}>
+                        <IoSettingsOutline size={18} /> Manage Habits
+                    </button>
+                </div>
             </div>
 
             {/* Date Strip */}

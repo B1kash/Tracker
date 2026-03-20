@@ -1,0 +1,140 @@
+.page { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.summaryRow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.summaryCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.summaryValue {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    line-height: 1;
+}
+
+.summaryLabel {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.chartCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.chartTitle {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 14px;
+}
+
+.formCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.formTitle {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 16px;
+}
+
+.formRow {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.toggleMeasurements {
+    background: none;
+    border: none;
+    color: var(--accent-purple);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 0 4px;
+    display: block;
+    margin-top: 8px;
+}
+
+.measurementGrid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .measurementGrid { grid-template-columns: repeat(2, 1fr); }
+    .summaryRow { grid-template-columns: 1fr; }
+}
+
+.historyCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+}
+
+.historyList { display: flex; flex-direction: column; gap: 10px; }
+
+.historyRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.historyRow:last-child { border-bottom: none; }
+
+.historyDate {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.historyMeasurements { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.measureBadge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    border: 1px solid;
+    border-radius: 999px;
+    padding: 1px 7px;
+}
+
+.historyRight { display: flex; align-items: center; gap: 12px; }
+
+.historyWeight {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--accent-purple);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}

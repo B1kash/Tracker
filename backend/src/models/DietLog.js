@@ -14,6 +14,8 @@ const DietLogSchema = new mongoose.Schema({
     food: { type: String, required: true },
     calories: { type: String },
     protein: { type: String },
+    carbs: { type: String },
+    fats: { type: String },
     notes: { type: String }
 }, { timestamps: true });
 

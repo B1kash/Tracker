@@ -182,21 +182,31 @@
 
     .nav {
         flex-direction: row;
-        gap: 0;
-        justify-content: space-around;
+        gap: 4px;
+        justify-content: flex-start;
         padding: 6px 8px;
         padding-bottom: env(safe-area-inset-bottom, 6px);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none; /* Firefox */
+    }
+
+    .nav::-webkit-scrollbar {
+        display: none; /* Chrome, Safari */
     }
 
     .navItem {
         flex-direction: column;
-        gap: 2px;
-        padding: 8px 12px;
+        gap: 4px;
+        padding: 8px 4px;
         border-radius: var(--radius-md);
         font-size: 0.65rem;
         align-items: center;
         justify-content: center;
-        flex: 1;
+        flex: 0 0 auto;
+        min-width: 72px;
+        scroll-snap-align: center;
     }
 
     .navIcon {

@@ -23,6 +23,15 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/gamification', require('./routes/gamificationRoutes'));
 app.use('/api/habits', require('./routes/habitRoutes'));
 app.use('/api/gym', require('./routes/gymRoutes'));
+app.use('/api/cardio', require('./routes/cardioRoutes'));
+app.use('/api/diet', require('./routes/dietRoutes'));
+app.use('/api/bodyweight', require('./routes/bodyWeightRoutes'));
+app.use('/api/templates', require('./routes/templateRoutes'));
+app.use('/api/push', require('./routes/pushRoutes'));
+app.use('/api/goals', require('./routes/goalRoutes'));
+
+// Start cron jobs
+require('./cron/pushCron');
 
 app.get('/', (req, res) => {
     res.send('Life Tracker API is running...');

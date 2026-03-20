@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { IoDownloadOutline, IoPersonOutline, IoShieldCheckmarkOutline, IoTrashOutline } from 'react-icons/io5';
+import { useState, useEffect } from 'react';
+import { IoDownloadOutline, IoPersonOutline, IoShieldCheckmarkOutline, IoTrashOutline, IoNotificationsOutline, IoTimeOutline } from 'react-icons/io5';
+import { getPushPublicKey, getPushSettings, updatePushSettings, subscribeToPush } from '@/lib/storage';
 import styles from './page.module.css';
 
 async function apiCall(endpoint, method = 'GET', body = null) {
@@ -34,9 +35,65 @@ export default function SettingsPage() {
     const [msg, setMsg] = useState('');
     const username = typeof window !== 'undefined' ? localStorage.getItem('username') || 'User' : 'User';
 
+    const [pushEnabled, setPushEnabled] = useState(false);
+    const [reminderTime, setReminderTime] = useState('08:00');
+
+    useEffect(() => {
+        async function load() {
+            if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.getRegistration();
+                const sub = await reg?.pushManager.getSubscription();
+                setPushEnabled(!!sub);
+            }
+            const settings = await getPushSettings();
+            if (settings) {
+                setReminderTime(settings.habitReminderTime || '08:00');
+            }
+        }
+        load();
+    }, []);
+
     const showMsg = (text) => {
         setMsg(text);
         setTimeout(() => setMsg(''), 3000);
+    };
+
+    const handleEnablePush = async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            showMsg('❌ Push notifications not supported by your browser.');
+            return;
+        }
+
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const publicKey = await getPushPublicKey();
+            
+            // Convert base64 VAPID string to Uint8Array
+            const padding = '='.repeat((4 - publicKey.length % 4) % 4);
+            const base64 = (publicKey + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+
+            const subscription = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: outputArray
+            });
+
+            await subscribeToPush(subscription);
+            setPushEnabled(true);
+            showMsg('✅ Notifications enabled!');
+        } catch (e) {
+            console.error(e);
+            showMsg('❌ Failed to enable notifications. Please allow permissions.');
+        }
+    };
+
+    const handleSaveReminderTime = async () => {
+        await updatePushSettings({ habitReminderTime: reminderTime });
+        showMsg('✅ Reminder time updated!');
     };
 
     const exportWorkoutsCSV = async () => {
@@ -143,7 +200,45 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
+            {/* Notifications Section */}
+            <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                    <IoNotificationsOutline size={18} style={{ color: 'var(--accent-purple)' }} />
+                    <h2 className={styles.sectionTitle}>Notifications</h2>
+                </div>
+                <div className={styles.card}>
+                    <p className={styles.description}>Stay on track with daily habit reminders and gym alerts.</p>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid var(--border-color)' }}>
+                        <div>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Push Notifications</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{pushEnabled ? 'Enabled on this device' : 'Disabled on this device'}</div>
+                        </div>
+                        <button className="btn btn-secondary btn-sm" onClick={handleEnablePush} disabled={pushEnabled}>
+                            {pushEnabled ? 'Enabled' : 'Enable'}
+                        </button>
+                    </div>
 
+                    <div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <IoTimeOutline size={16} /> Daily Habit Reminder
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <input 
+                                type="time" 
+                                className="form-input" 
+                                value={reminderTime} 
+                                onChange={(e) => setReminderTime(e.target.value)} 
+                                style={{ maxWidth: '150px' }}
+                            />
+                            <button className="btn btn-primary btn-sm" onClick={handleSaveReminderTime}>Save Time</button>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                            You will receive a notification at this time if you have uncompleted habits.
+                        </div>
+                    </div>
+                </div>
+            </div>
             {/* Danger Zone */}
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>

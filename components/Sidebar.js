@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { IoGridOutline, IoBarbell, IoBookOutline, IoVideocamOutline, IoSparkles, IoSunnyOutline, IoMoonOutline, IoCheckboxOutline, IoCalendarOutline, IoLogOutOutline, IoSettingsOutline } from 'react-icons/io5';
+import { IoGridOutline, IoBarbell, IoBookOutline, IoVideocamOutline, IoSparkles, IoSunnyOutline, IoMoonOutline, IoCheckboxOutline, IoCalendarOutline, IoLogOutOutline, IoSettingsOutline, IoScaleOutline } from 'react-icons/io5';
 import { useTheme } from './ThemeProvider';
 import { useEffect, useState } from 'react';
 import { getGamificationData, logout } from '@/lib/storage';
@@ -16,6 +16,7 @@ const navItems = [
     { href: '/learning', label: 'Learning', icon: IoBookOutline },
     { href: '/content', label: 'Content', icon: IoVideocamOutline },
     { href: '/calendar', label: 'Calendar', icon: IoCalendarOutline },
+    { href: '/bodyweight', label: 'Body Weight', icon: IoScaleOutline },
     { href: '/settings', label: 'Settings', icon: IoSettingsOutline },
 ];
 

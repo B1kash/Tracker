@@ -6,6 +6,8 @@ import StatsCard from '@/components/StatsCard';
 import ProgressRing from '@/components/ProgressRing';
 import EmptyState from '@/components/EmptyState';
 import WeeklyQuests from '@/components/WeeklyQuests';
+import MilestoneGoals from '@/components/MilestoneGoals';
+import ProgressCardModal from '@/components/ProgressCard';
 import { getStats, getRecentActivity } from '@/lib/storage';
 import styles from './page.module.css';
 
@@ -13,6 +15,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
   const [mounted, setMounted] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -68,11 +71,16 @@ export default function Dashboard() {
 
   return (
     <div className={styles.page}>
-      <div className="page-header">
-        <h1 className="page-title">
-          <span className="page-title-gradient">Dashboard</span>
-        </h1>
-        <p className="page-subtitle">Track your goals and stay on top of your game</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 className="page-title">
+            <span className="page-title-gradient">Dashboard</span>
+          </h1>
+          <p className="page-subtitle">Track your goals and stay on top of your game</p>
+        </div>
+        <button className="btn btn-secondary" onClick={() => setShowShareModal(true)}>
+            Share Progress ✨
+        </button>
       </div>
 
       {!hasGoals ? (
@@ -154,7 +162,10 @@ export default function Dashboard() {
             </div>
           )}
 
+          <MilestoneGoals />
           <WeeklyQuests />
+          
+          <ProgressCardModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} />
         </>
       )}
     </div>
