@@ -9,6 +9,10 @@ const WorkoutTemplateSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     exercises: [{
         name: { type: String, required: true },
+        sets: [{
+            reps: { type: Number },
+            weight: { type: String }
+        }],
         defaultSets: { type: Number, default: 3 },
         defaultReps: { type: Number, default: 10 },
         defaultWeight: { type: String, default: '' }

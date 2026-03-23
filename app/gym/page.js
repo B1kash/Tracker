@@ -12,9 +12,12 @@ import {
     getCardioByDate, addCardioLog, deleteCardioLog,
     getDietByDate, addDietLog, deleteDietLog,
     getGymPhotos, addGymPhoto, deleteGymPhoto,
-    getWorkoutTemplates, createWorkoutTemplate, deleteWorkoutTemplate
+    getWorkoutTemplates, createWorkoutTemplate, deleteWorkoutTemplate,
+    generateWorkoutTemplateWithAI, analyzeDietWithAI,
+    updateDietTargets, generateDietPlanWithAI, getMe
 } from '@/lib/storage';
 import { triggerGamificationUpdate } from '@/lib/events';
+import { IoSettingsOutline, IoSparklesOutline, IoRestaurantOutline, IoChevronDownOutline, IoChevronUpOutline } from 'react-icons/io5';
 import { compressImage } from './Compressor';
 import OneRMChart from '@/components/OneRMChart';
 import MacroRings from '@/components/MacroRings';
@@ -62,6 +65,31 @@ export default function GymPage() {
     const [uploading, setUploading] = useState(false);
     const setDebounceTimer = useRef(null);
 
+    // AI States
+    const [aiTemplatePrompt, setAiTemplatePrompt] = useState('');
+    const [generatingTemplate, setGeneratingTemplate] = useState(false);
+    const [dietSnapText, setDietSnapText] = useState('');
+    const [analyzingDiet, setAnalyzingDiet] = useState(false);
+    
+    // UI states
+    const [expandedTemplates, setExpandedTemplates] = useState(new Set());
+    const [userData, setUserData] = useState(null);
+    const [showTargetModal, setShowTargetModal] = useState(false);
+    const [generatingDietPlan, setGeneratingDietPlan] = useState(false);
+    const [showDietPlan, setShowDietPlan] = useState(false);
+    const [aiDietPlan, setAiDietPlan] = useState(null);
+    const [aiDietConfig, setAiDietConfig] = useState({
+        age: 25, weight: 70, height: 175, goal: 'Build Muscle', activity: 'Moderately Active', vegNonVeg: 'Non-Vegetarian'
+    });
+
+    const toggleTemplateExpand = (id) => {
+        setExpandedTemplates((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
     // Cardio form
     const [cardioForm, setCardioForm] = useState({ type: 'Running', duration: '', distance: '', calories: '' });
     // Diet form
@@ -79,7 +107,22 @@ export default function GymPage() {
         setDietEntries(await getDietByDate(dateStr));
         setPhotos(await getGymPhotos());
         setTemplates(await getWorkoutTemplates());
+        
+        // Load Profile Data for targets
+        const me = await apiCall('/auth/me');
+        if (me) setUserData(me);
     }, [dateStr]);
+
+    // Add apiCall for auth me if not already in storage
+    async function apiCall(endpoint, method = 'GET', body = null) {
+        const token = localStorage.getItem('jwt_token');
+        const res = await fetch(`http://localhost:5000/api${endpoint}`, {
+            method,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: body ? JSON.stringify(body) : null
+        });
+        return res.json();
+    }
 
     useEffect(() => {
         loadData().then(() => setMounted(true));
@@ -195,6 +238,57 @@ export default function GymPage() {
         setDietEntries(await getDietByDate(dateStr));
     };
 
+    const handleAIDietSubmit = async (e, file = null) => {
+        if (e) e.preventDefault();
+        if (!dietSnapText && !file) return;
+        setAnalyzingDiet(true);
+        try {
+            let base64 = null;
+            if (file) {
+                base64 = await compressImage(file, 800, 0.6);
+            }
+            await analyzeDietWithAI(dietSnapText, base64, dateStr);
+            setDietEntries(await getDietByDate(dateStr));
+            setDietSnapText('');
+        } catch (e) {
+            alert('AI Failed to parse your meal.');
+        }
+        setAnalyzingDiet(false);
+    };
+
+    const handleUpdateTargets = async (e) => {
+        if (e) e.preventDefault();
+        try {
+            const res = await apiCall('/auth/diet-targets', 'PUT', userData.dietTargets);
+            if (res) {
+                setUserData({ ...userData, dietTargets: res });
+                setShowTargetModal(false);
+            }
+        } catch (err) { alert('Failed to update targets'); }
+    };
+
+    const handleGenerateDietPlan = async (e) => {
+        if (e) e.preventDefault();
+        setGeneratingDietPlan(true);
+        try {
+            const res = await generateDietPlanWithAI(aiDietConfig);
+            setAiDietPlan(res);
+            setShowDietPlan(true);
+        } catch (err) { alert('AI Architect failed to build the plan.'); }
+        setGeneratingDietPlan(false);
+    };
+
+    const handleApplyAITargets = async () => {
+        if (!aiDietPlan) return;
+        try {
+            const res = await apiCall('/auth/diet-targets', 'PUT', aiDietPlan.targets);
+            if (res) {
+                setUserData({ ...userData, dietTargets: res });
+                setShowDietPlan(false);
+            }
+        } catch (err) { alert('Failed to apply AI targets'); }
+    };
+
     // === PHOTOS HANDLERS ===
     const handlePhotoUpload = async (e) => {
         const file = e.target.files?.[0];
@@ -239,6 +333,20 @@ export default function GymPage() {
         setTemplateName('');
         setTemplates(await getWorkoutTemplates());
         alert('Template saved successfully!');
+    };
+
+    const handleGenerateTemplate = async (e) => {
+        e.preventDefault();
+        if (!aiTemplatePrompt.trim()) return;
+        setGeneratingTemplate(true);
+        try {
+            await generateWorkoutTemplateWithAI(aiTemplatePrompt);
+            setTemplates(await getWorkoutTemplates());
+            setAiTemplatePrompt('');
+        } catch (e) {
+            alert('Failed to automatically generate template.');
+        }
+        setGeneratingTemplate(false);
     };
 
     const handleApplyTemplate = async (tpl) => {
@@ -383,32 +491,89 @@ export default function GymPage() {
                     <h3 className={styles.sectionTitle}>Workout Templates</h3>
                     <p className={styles.sectionSubtitle}>Load a saved routine, or save today's workout as a new template.</p>
                     
-                    <form onSubmit={handleSaveTemplate} className={styles.quickAdd}>
-                        <input className="form-input" placeholder="Save today's workout as... (e.g. Push Day A)" value={templateName} onChange={(e) => setTemplateName(e.target.value)} disabled={exercises.length === 0} required />
-                        <button type="submit" className="btn btn-primary btn-sm" disabled={exercises.length === 0}><IoSaveOutline size={18} /> Save</button>
-                    </form>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px', marginBottom: '25px' }}>
+                        <form onSubmit={handleSaveTemplate} style={{ background: 'var(--bg-card)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                                <IoSaveOutline size={18} /> Save Current Workout
+                            </div>
+                            <input className="form-input" placeholder="e.g. Push Day A" value={templateName} onChange={(e) => setTemplateName(e.target.value)} disabled={exercises.length === 0} required style={{ border: '1px solid rgba(255,255,255,0.1)' }} />
+                            <button type="submit" className="btn btn-primary btn-sm" disabled={exercises.length === 0}>Save Layout</button>
+                        </form>
+
+                        <form onSubmit={handleGenerateTemplate} style={{ background: 'linear-gradient(135deg, rgba(88,32,135,0.2), rgba(18,15,23,0.8))', padding: '15px', borderRadius: '12px', border: '1px solid var(--accent-purple)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-purple)', fontWeight: 'bold' }}>
+                                ✨ AI Auto-Generator
+                            </div>
+                            <input className="form-input" placeholder="e.g. '4-day upper body split'" value={aiTemplatePrompt} onChange={(e) => setAiTemplatePrompt(e.target.value)} disabled={generatingTemplate} required style={{ border: 'none', background: 'rgba(0,0,0,0.3)', color: 'white' }} />
+                            <button type="submit" className="btn btn-sm" disabled={generatingTemplate} style={{ background: 'var(--accent-purple)', color: 'white', border: 'none' }}>
+                                {generatingTemplate ? 'Thinking...' : 'Generate New Routine'}
+                            </button>
+                        </form>
+                    </div>
 
                     {templates.length === 0 ? (
                         <div className="empty-inline">No templates saved yet. Create your workout then save it here!</div>
                     ) : (
-                        <div className={styles.exerciseList}>
-                            {templates.map((tpl) => (
-                                <div key={tpl._id} className={styles.exerciseCard}>
-                                    <div className={styles.exerciseHeader}>
-                                        <div className={styles.exerciseNameWrapper} style={{ gap: '10px' }}>
-                                            <IoListOutline size={20} style={{ color: 'var(--accent-purple)' }} />
-                                            <span className={styles.exerciseName}>{tpl.name}</span>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
+                            {templates.map((tpl) => {
+                                const isAI = tpl.name.includes('(AI Generated)');
+                                const cleanName = tpl.name.replace('(AI Generated)', '').trim();
+                                const isExpanded = expandedTemplates.has(tpl._id || tpl.id);
+                                const maxShows = 4;
+                                const displayExs = isExpanded ? tpl.exercises : tpl.exercises.slice(0, maxShows);
+                                const extraCount = !isExpanded && tpl.exercises.length > maxShows ? tpl.exercises.length - maxShows : 0;
+
+                                return (
+                                    <div key={tpl._id} style={{ background: 'var(--bg-card)', borderRadius: '12px', border: isAI ? '1px solid rgba(138,43,226,0.3)' : '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                                        <div style={{ padding: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', background: isAI ? 'linear-gradient(90deg, rgba(138,43,226,0.1), transparent)' : 'transparent' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                                                    {isAI ? <span style={{ fontSize: '1.1rem' }}>✨</span> : <IoListOutline size={18} style={{ color: 'var(--accent-cyan)' }} />}
+                                                    <span style={{ fontWeight: '600', color: 'var(--text-primary)', lineHeight: '1.2' }}>{cleanName}</span>
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tpl.exercises.length} Exercises</div>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                <button className="btn btn-secondary btn-sm" onClick={() => handleApplyTemplate(tpl)} disabled={isFuture} style={{ padding: '4px 10px', fontSize: '0.8rem' }}>Apply</button>
+                                                <button type="button" className="btn-icon" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteTemplate(tpl._id || tpl.id); }} style={{ padding: '4px' }}><IoTrashOutline size={16} /></button>
+                                            </div>
                                         </div>
-                                        <div className={styles.exerciseActions}>
-                                            <button className="btn btn-secondary btn-sm" onClick={() => handleApplyTemplate(tpl)} disabled={isFuture}>Apply</button>
-                                            <button type="button" className="btn-icon" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteTemplate(tpl._id || tpl.id); }}><IoTrashOutline size={16} /></button>
+                                        <div style={{ padding: '12px 15px', background: 'rgba(0,0,0,0.1)' }}>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                {displayExs.map((e, idx) => {
+                                                    let setStr = '';
+                                                    if (e.sets && e.sets.length > 0) {
+                                                        const validReps = e.sets.map(s => s.reps).filter(r => r);
+                                                        if (validReps.length > 0 && validReps.every(r => r == validReps[0])) {
+                                                            setStr = `${e.sets.length}×${validReps[0]}`;
+                                                        } else {
+                                                            setStr = `${e.sets.length} sets`;
+                                                        }
+                                                    } else if (e.defaultSets && e.defaultReps) {
+                                                        setStr = `${e.defaultSets}×${e.defaultReps}`;
+                                                    }
+                                                    return (
+                                                        <div key={idx} style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                                                            <span style={{ color: 'var(--text-primary)' }}>{e.name}</span>
+                                                            {setStr && <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}> {setStr}</span>}
+                                                        </div>
+                                                    );
+                                                })}
+                                                {extraCount > 0 && (
+                                                    <button type="button" onClick={() => toggleTemplateExpand(tpl._id || tpl.id)} style={{ background: 'rgba(138,43,226,0.15)', color: 'var(--accent-purple)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
+                                                        +{extraCount} more
+                                                    </button>
+                                                )}
+                                                {isExpanded && tpl.exercises.length > maxShows && (
+                                                    <button type="button" onClick={() => toggleTemplateExpand(tpl._id || tpl.id)} style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
+                                                        Collapse
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className={styles.setRow} style={{ padding: '0 12px 12px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                        Includes: {tpl.exercises.map(e => e.name).join(', ')}
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </>
@@ -474,7 +639,126 @@ export default function GymPage() {
             {/* ========== DIET TAB ========== */}
             {activeTab === 'diet' && (
                 <>
-                    <MacroRings dietEntries={dietEntries} />
+                    <div style={{ position: 'relative' }}>
+                        <MacroRings dietEntries={dietEntries} targets={userData?.dietTargets} />
+                        <button 
+                            onClick={() => setShowTargetModal(true)}
+                            style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: 'none', padding: '8px', borderRadius: '50%', cursor: 'pointer', display: 'flex' }}
+                            title="Configure Macro Targets"
+                        >
+                            <IoSettingsOutline size={18} />
+                        </button>
+                    </div>
+
+                    {/* AI Diet Architect Section */}
+                    <div style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.1), rgba(139,92,246,0.1))', padding: '20px', borderRadius: '16px', marginBottom: '20px', border: '1px dotted var(--accent-cyan)', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: '-10px', right: '-10px', opacity: 0.1 }}>
+                            <IoRestaurantOutline size={100} />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+                            <div style={{ background: 'var(--gradient-primary)', padding: '6px', borderRadius: '8px', color: 'white' }}>
+                                <IoSparklesOutline size={20} />
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>AI Diet Architect</h3>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>Generate personalized Indian meal plans and macro targets</p>
+                            </div>
+                        </div>
+
+                        {!showDietPlan ? (
+                            <form onSubmit={handleGenerateDietPlan} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                                <div className="form-group">
+                                    <label className="form-label">Age</label>
+                                    <input type="number" className="form-input" value={aiDietConfig.age} onChange={(e) => setAiDietConfig({...aiDietConfig, age: e.target.value})} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Weight (kg)</label>
+                                    <input type="number" className="form-input" value={aiDietConfig.weight} onChange={(e) => setAiDietConfig({...aiDietConfig, weight: e.target.value})} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Height (cm)</label>
+                                    <input type="number" className="form-input" value={aiDietConfig.height} onChange={(e) => setAiDietConfig({...aiDietConfig, height: e.target.value})} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Goal</label>
+                                    <select className="form-select" value={aiDietConfig.goal} onChange={(e) => setAiDietConfig({...aiDietConfig, goal: e.target.value})}>
+                                        <option>Weight Loss</option>
+                                        <option>Build Muscle</option>
+                                        <option>Maintenance</option>
+                                        <option>Endurance</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Activity</label>
+                                    <select className="form-select" value={aiDietConfig.activity} onChange={(e) => setAiDietConfig({...aiDietConfig, activity: e.target.value})}>
+                                        <option>Sedentary</option>
+                                        <option>Lightly Active</option>
+                                        <option>Moderately Active</option>
+                                        <option>Very Active</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Preference</label>
+                                    <select className="form-select" value={aiDietConfig.vegNonVeg} onChange={(e) => setAiDietConfig({...aiDietConfig, vegNonVeg: e.target.value})}>
+                                        <option>Vegetarian</option>
+                                        <option>Non-Vegetarian</option>
+                                        <option>Vegan</option>
+                                        <option>Eggetarian</option>
+                                    </select>
+                                </div>
+                                <button type="submit" className="btn btn-primary" style={{ gridColumn: '1 / -1', marginTop: '10px' }} disabled={generatingDietPlan}>
+                                    {generatingDietPlan ? 'Architecting your plan...' : 'Build My Indian Diet Plan'}
+                                </button>
+                            </form>
+                        ) : (
+                            <div style={{ background: 'var(--bg-secondary)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                    <h4 style={{ fontWeight: 'bold', color: 'var(--accent-cyan)' }}>Your Personalized Plan</h4>
+                                    <button onClick={() => setShowDietPlan(false)} className="btn-icon"><IoCloseCircleOutline size={20} /></button>
+                                </div>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '20px', textAlign: 'center' }}>
+                                    {Object.entries(aiDietPlan.targets).map(([k, v]) => (
+                                        <div key={k} style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{k}</div>
+                                            <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{v}{k === 'calories' ? '' : 'g'}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {aiDietPlan.plan.map((meal, idx) => (
+                                        <div key={idx} style={{ padding: '10px', borderLeft: '3px solid var(--accent-purple)', background: 'rgba(255,255,255,0.02)' }}>
+                                            <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '4px' }}>{meal.meal}</div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{meal.recommendation}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <button onClick={handleApplyAITargets} className="btn btn-primary" style={{ width: '100%', marginTop: '20px' }}>
+                                    Apply these targets to my tracker
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* AI Magic Logger */}
+                    <div style={{ background: 'linear-gradient(145deg, var(--bg-secondary), #2a1538)', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid var(--accent-purple)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                            ✨ AI Magic Logger
+                        </div>
+                        <form onSubmit={handleAIDietSubmit} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <input className="form-input" placeholder="What did you eat? E.g. '3 eggs and toast'" value={dietSnapText} onChange={(e) => setDietSnapText(e.target.value)} disabled={analyzingDiet} style={{ flex: 1, border: 'none', background: 'var(--bg-card)' }} />
+                            <label className="btn btn-sm" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer', padding: '0 12px' }}>
+                                📸 Photo
+                                <input type="file" accept="image/*" onChange={(e) => handleAIDietSubmit(null, e.target.files[0])} disabled={analyzingDiet} style={{ display: 'none' }} />
+                            </label>
+                            <button type="submit" className="btn btn-sm" disabled={analyzingDiet || !dietSnapText} style={{ background: 'var(--accent-purple)', color: 'white' }}>
+                                {analyzingDiet ? 'Analyzing...' : 'Log'}
+                            </button>
+                        </form>
+                    </div>
+
                     <form onSubmit={handleAddDiet} className={styles.dietForm}>
                         <div className={styles.dietFormRow}>
                             <div className="form-group" style={{ width: '130px' }}>
@@ -583,6 +867,40 @@ export default function GymPage() {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* Target Modal */}
+            {showTargetModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '400px' }}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Macro Targets</h2>
+                            <button onClick={() => setShowTargetModal(false)} className="modal-close"><IoCloseCircleOutline size={24} /></button>
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                            Manually set your daily nutrition goals. We'll use these to track your rings!
+                        </p>
+                        <form onSubmit={handleUpdateTargets} className="modal-body">
+                            <div className="form-group">
+                                <label className="form-label">Daily Calories</label>
+                                <input type="number" className="form-input" value={userData?.dietTargets?.calories} onChange={(e) => setUserData({...userData, dietTargets: {...userData.dietTargets, calories: e.target.value}})} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Protein (g)</label>
+                                <input type="number" className="form-input" value={userData?.dietTargets?.protein} onChange={(e) => setUserData({...userData, dietTargets: {...userData.dietTargets, protein: e.target.value}})} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Carbs (g)</label>
+                                <input type="number" className="form-input" value={userData?.dietTargets?.carbs} onChange={(e) => setUserData({...userData, dietTargets: {...userData.dietTargets, carbs: e.target.value}})} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Fats (g)</label>
+                                <input type="number" className="form-input" value={userData?.dietTargets?.fats} onChange={(e) => setUserData({...userData, dietTargets: {...userData.dietTargets, fats: e.target.value}})} />
+                            </div>
+                            <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }}>Save Targets</button>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     );

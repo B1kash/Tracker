@@ -31,7 +31,7 @@ app.use('/api/push', require('./routes/pushRoutes'));
 app.use('/api/goals', require('./routes/goalRoutes'));
 app.use('/api/learning', require('./routes/learningRoutes'));
 app.use('/api/content', require('./routes/contentRoutes'));
-
+app.use('/api/ai', require('./routes/aiRoutes'));
 // Start cron jobs
 require('./cron/pushCron');
 

@@ -21,6 +21,8 @@ const UserSchema = new mongoose.Schema({
         bestStreak: { type: Number, default: 0 },
         lastActiveDate: { type: Date, default: null },
         lastQuestReset: { type: Date, default: null },
+        weeklyTrainDays: { type: Number, default: 5 }, // Added for custom streak logic
+        restDaysAvailable: { type: Number, default: 2 }, // Replenishes weekly (7 - weeklyTrainDays)
         quests: [{
             title: String,
             target: Number,
@@ -29,6 +31,12 @@ const UserSchema = new mongoose.Schema({
             completed: { type: Boolean, default: false },
             type: { type: String, enum: ['gym', 'cardio', 'diet', 'habits'] }
         }]
+    },
+    dietTargets: {
+        calories: { type: Number, default: 2000 },
+        protein: { type: Number, default: 150 },
+        carbs: { type: Number, default: 200 },
+        fats: { type: Number, default: 70 }
     }
 }, { timestamps: true });
 

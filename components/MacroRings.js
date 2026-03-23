@@ -38,7 +38,14 @@ function Ring({ value, target, color, size = 80, strokeWidth = 7 }) {
     );
 }
 
-export default function MacroRings({ dietEntries }) {
+export default function MacroRings({ dietEntries, targets }) {
+    const goals = {
+        protein: targets?.protein || 150,
+        carbs: targets?.carbs || 250,
+        fats: targets?.fats || 65,
+        calories: targets?.calories || 2200
+    };
+
     const totals = (dietEntries || []).reduce((acc, entry) => {
         acc.calories += parseInt(entry.calories) || 0;
         acc.protein  += parseInt(entry.protein)  || 0;
@@ -56,11 +63,12 @@ export default function MacroRings({ dietEntries }) {
             <div className={styles.rings}>
                 {MACROS.map(m => {
                     const val = totals[m.key];
-                    const pct = Math.min(Math.round((val / m.target) * 100), 100);
+                    const target = goals[m.key];
+                    const pct = Math.min(Math.round((val / target) * 100), 100);
                     return (
                         <div key={m.key} className={styles.ringCard}>
                             <div className={styles.ringWrapper}>
-                                <Ring value={val} target={m.target} color={m.color} size={76} strokeWidth={7} />
+                                <Ring value={val} target={target} color={m.color} size={76} strokeWidth={7} />
                                 <div className={styles.ringCenter}>
                                     <span className={styles.ringEmoji}>{m.emoji}</span>
                                 </div>
@@ -69,7 +77,7 @@ export default function MacroRings({ dietEntries }) {
                             <div className={styles.ringValue} style={{ color: m.color }}>
                                 {val}<span className={styles.ringUnit}>{m.unit}</span>
                             </div>
-                            <div className={styles.ringTarget}>/ {m.target}{m.unit}</div>
+                            <div className={styles.ringTarget}>/ {target}{m.unit}</div>
                             <div className={styles.ringPct} style={{ color: pct >= 100 ? '#10b981' : 'var(--text-muted)' }}>
                                 {pct}%
                             </div>

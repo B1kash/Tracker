@@ -8,6 +8,7 @@ import EmptyState from '@/components/EmptyState';
 import WeeklyQuests from '@/components/WeeklyQuests';
 import MilestoneGoals from '@/components/MilestoneGoals';
 import ProgressCardModal from '@/components/ProgressCard';
+import AICoachModal from '@/components/AICoachModal';
 import { getStats, getRecentActivity } from '@/lib/storage';
 import styles from './page.module.css';
 
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [mounted, setMounted] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -78,9 +80,14 @@ export default function Dashboard() {
           </h1>
           <p className="page-subtitle">Track your goals and stay on top of your game</p>
         </div>
-        <button className="btn btn-secondary" onClick={() => setShowShareModal(true)}>
-            Share Progress ✨
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+            <button className="btn" style={{ background: 'var(--accent-purple)', color: 'white', border: 'none' }} onClick={() => setShowAIModal(true)}>
+                Ask Oracle 🔮
+            </button>
+            <button className="btn btn-secondary" onClick={() => setShowShareModal(true)}>
+                Share Progress ✨
+            </button>
+        </div>
       </div>
 
       {!hasGoals ? (
@@ -166,6 +173,7 @@ export default function Dashboard() {
           <WeeklyQuests />
           
           <ProgressCardModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} />
+          <AICoachModal isOpen={showAIModal} onClose={() => setShowAIModal(false)} />
         </>
       )}
     </div>

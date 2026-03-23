@@ -77,6 +77,29 @@ const loginUser = async (req, res) => {
     }
 };
 
+// @desc    Update diet targets
+// @route   PUT /api/auth/diet-targets
+// @access  Private
+const updateDietTargets = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (user) {
+            user.dietTargets = {
+                calories: req.body.calories || user.dietTargets.calories,
+                protein: req.body.protein || user.dietTargets.protein,
+                carbs: req.body.carbs || user.dietTargets.carbs,
+                fats: req.body.fats || user.dietTargets.fats,
+            };
+            await user.save();
+            res.status(200).json(user.dietTargets);
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 // @desc    Get user data
 // @route   GET /api/auth/me
 // @access  Private
@@ -88,5 +111,6 @@ module.exports = {
     registerUser,
     loginUser,
     getMe,
-    logoutUser
+    logoutUser,
+    updateDietTargets
 };

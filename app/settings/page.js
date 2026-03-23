@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IoDownloadOutline, IoPersonOutline, IoShieldCheckmarkOutline, IoTrashOutline, IoNotificationsOutline, IoTimeOutline } from 'react-icons/io5';
-import { getPushPublicKey, getPushSettings, updatePushSettings, subscribeToPush } from '@/lib/storage';
+import { IoDownloadOutline, IoPersonOutline, IoShieldCheckmarkOutline, IoTrashOutline, IoNotificationsOutline, IoTimeOutline, IoMoonOutline, IoSunnyOutline, IoColorPaletteOutline } from 'react-icons/io5';
+import { useTheme } from '@/components/ThemeProvider';
+import { getPushPublicKey, getPushSettings, updatePushSettings, subscribeToPush, getGamificationData, updateGamificationSettings } from '@/lib/storage';
 import styles from './page.module.css';
 
 async function apiCall(endpoint, method = 'GET', body = null) {
@@ -37,6 +38,12 @@ export default function SettingsPage() {
 
     const [pushEnabled, setPushEnabled] = useState(false);
     const [reminderTime, setReminderTime] = useState('08:00');
+    
+    // Custom Streak logic
+    const [weeklyTrainDays, setWeeklyTrainDays] = useState(5);
+    
+    // Theme
+    const { theme, toggleTheme } = useTheme();
 
     useEffect(() => {
         async function load() {
@@ -48,6 +55,12 @@ export default function SettingsPage() {
             const settings = await getPushSettings();
             if (settings) {
                 setReminderTime(settings.habitReminderTime || '08:00');
+            }
+            
+            // Load Gamification Settings
+            const gamData = await getGamificationData();
+            if (gamData && gamData.weeklyTrainDays) {
+                setWeeklyTrainDays(gamData.weeklyTrainDays);
             }
         }
         load();
@@ -94,6 +107,15 @@ export default function SettingsPage() {
     const handleSaveReminderTime = async () => {
         await updatePushSettings({ habitReminderTime: reminderTime });
         showMsg('✅ Reminder time updated!');
+    };
+
+    const handleSaveTrainDays = async () => {
+        try {
+            await updateGamificationSettings({ weeklyTrainDays: Number(weeklyTrainDays) });
+            showMsg(`✅ Weekly target set to ${weeklyTrainDays} days. Streaks are now protected on rest days!`);
+        } catch (e) {
+            showMsg('❌ Failed to update streak settings.');
+        }
     };
 
     const exportWorkoutsCSV = async () => {
@@ -200,6 +222,58 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
+            {/* Streak & Training Section */}
+            <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                    <IoShieldCheckmarkOutline size={18} style={{ color: 'var(--accent-orange)' }} />
+                    <h2 className={styles.sectionTitle}>Training & Streaks</h2>
+                </div>
+                <div className={styles.card}>
+                    <p className={styles.description}>Customize how many days you plan to train per week. Your streak won't break on your targeted rest days!</p>
+                    <div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                             Weekly Training Goal
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <select 
+                                className="form-input" 
+                                value={weeklyTrainDays} 
+                                onChange={(e) => setWeeklyTrainDays(e.target.value)} 
+                                style={{ maxWidth: '150px' }}
+                            >
+                                {[1, 2, 3, 4, 5, 6, 7].map(num => (
+                                    <option key={num} value={num}>{num} {num === 1 ? 'Day' : 'Days'} / Week</option>
+                                ))}
+                            </select>
+                            <button className="btn btn-primary btn-sm" onClick={handleSaveTrainDays}>Save Goal</button>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                            Based on this, you safely get {7 - Number(weeklyTrainDays)} rest {7 - Number(weeklyTrainDays) === 1 ? 'day' : 'days'} per week where skipping the gym won't break your streak!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Appearance Section */}
+            <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                    <IoColorPaletteOutline size={18} style={{ color: 'var(--accent-cyan)' }} />
+                    <h2 className={styles.sectionTitle}>Appearance</h2>
+                </div>
+                <div className={styles.card}>
+                    <p className={styles.description}>Customize the look and feel of your app tracker.</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px', background: 'var(--bg-input)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {theme === 'dark' ? <IoMoonOutline size={20} style={{ color: 'var(--accent-purple)' }} /> : <IoSunnyOutline size={20} style={{ color: 'var(--accent-amber)' }} />}
+                            <span style={{ fontWeight: 600 }}>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+                        </div>
+                        <button className="btn btn-secondary btn-sm" onClick={toggleTheme}>
+                            Switch Theme
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Notifications Section */}
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>

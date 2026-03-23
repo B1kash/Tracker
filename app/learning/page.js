@@ -9,7 +9,7 @@ import {
 import EmptyState from '@/components/EmptyState';
 import {
     getLearningGoals, addLearningGoal, updateLearningGoal, deleteLearningGoal,
-    addProgressLog, deleteProgressLog,
+    addProgressLog, deleteProgressLog, generateCurriculumWithAI
 } from '@/lib/storage';
 import styles from './page.module.css';
 
@@ -45,6 +45,10 @@ export default function LearningPage() {
     const [goalForm, setGoalForm] = useState({ title: '', resource: '', progress: 0, status: 'Not Started' });
     const [logForm, setLogForm] = useState({ whatLearned: '', doubts: '', keyTakeaways: '', timeSpent: '', mood: 'good', progress: '' });
 
+    // AI States
+    const [aiTopic, setAiTopic] = useState('');
+    const [generatingCurriculum, setGeneratingCurriculum] = useState(false);
+
     const loadGoals = useCallback(async () => {
         setLoading(true);
         const data = await getLearningGoals();
@@ -79,6 +83,32 @@ export default function LearningPage() {
         setEditingGoal(null);
         setGoalForm({ title: '', resource: '', progress: 0, status: 'Not Started' });
         loadGoals();
+    };
+
+    const handleGenerateCurriculum = async (e) => {
+        e.preventDefault();
+        if (!aiTopic.trim()) return;
+        setGeneratingCurriculum(true);
+        try {
+            const res = await generateCurriculumWithAI(aiTopic);
+            const steps = res.steps || [];
+            if (steps.length > 0) {
+                // Create a master goal
+                const payload = { title: `AI: ${aiTopic}`, resource: 'Curriculum from Oracle ✨', progress: 0, status: 'Not Started' };
+                const newGoal = await addLearningGoal(payload);
+                // Add the curriculum as the first log
+                await addProgressLog(newGoal._id || newGoal.id, {
+                    whatLearned: 'Syllabus successfully generated!\n\n' + steps.join('\n\n'),
+                    mood: 'great'
+                });
+                setAiTopic('');
+                loadGoals();
+                alert('Curriculum generated! Check the new Course log.');
+            }
+        } catch (e) {
+            alert('Failed to generate curriculum.');
+        }
+        setGeneratingCurriculum(false);
     };
 
     const handleDeleteGoal = async (id) => {
@@ -141,6 +171,14 @@ export default function LearningPage() {
                     <IoAdd size={20} /> New Goal
                 </button>
             </div>
+
+            <form onSubmit={handleGenerateCurriculum} style={{ background: 'linear-gradient(135deg, var(--bg-card), #1e1526)', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid var(--accent-purple)', display: 'flex', gap: '10px' }}>
+                <span style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>✨</span>
+                <input className="form-input" placeholder="AI Oracle: What do you want to learn? (e.g. 'Advanced React')" value={aiTopic} onChange={(e) => setAiTopic(e.target.value)} disabled={generatingCurriculum || loading} style={{ flex: 1, border: 'none', background: 'transparent' }} required />
+                <button type="submit" className="btn btn-sm" disabled={generatingCurriculum || !aiTopic} style={{ background: 'var(--accent-purple)', color: 'white', border: 'none' }}>
+                    {generatingCurriculum ? 'Generating...' : 'Build Curriculum'}
+                </button>
+            </form>
 
             {todaysLogs.length > 0 && (
                 <div className={styles.todaySection}>
