@@ -11,6 +11,7 @@ import {
   getDietByDate, addDietLog, deleteDietLog,
   getGymPhotosByDate, uploadGymPhoto, deleteGymPhoto,
 } from '../lib/storage';
+import AICoachModal from '../components/AICoachModal';
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
@@ -483,6 +484,7 @@ const TABS = [
 export default function GymScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('exercises');
+  const [showAI, setShowAI] = useState(false);
 
   const dateStr = getDateStr(selectedDate);
   const todayStr = getDateStr(new Date());
@@ -490,7 +492,14 @@ export default function GymScreen() {
 
   return (
     <View style={s.container}>
-      <DateStrip selectedDate={selectedDate} onSelect={setSelectedDate} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 16 }}>
+        <View style={{ flex: 1 }}><DateStrip selectedDate={selectedDate} onSelect={setSelectedDate} /></View>
+        <TouchableOpacity style={{ padding: 10, backgroundColor: 'rgba(139,92,246,0.15)', borderRadius: 12 }} onPress={() => setShowAI(true)}>
+          <Ionicons name="sparkles" size={24} color="#8b5cf6" />
+        </TouchableOpacity>
+      </View>
+
+      <AICoachModal visible={showAI} onClose={() => setShowAI(false)} />
 
       <View style={s.tabBar}>
         {TABS.map(t => (

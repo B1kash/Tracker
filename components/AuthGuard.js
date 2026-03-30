@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import styles from './AuthGuard.module.css';
 import { useRouter } from 'next/navigation';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { googleLogin } from '@/lib/storage';
 import LevelUpCelebration from './LevelUpCelebration';
 import RestTimer from './RestTimer';
 
@@ -52,14 +54,28 @@ export default function AuthGuard({ children }) {
         }
     };
 
+    const handleGoogleSuccess = async (credentialResponse) => {
+        try {
+            setError('');
+            const data = await googleLogin(credentialResponse.credential);
+            localStorage.setItem('jwt_token', data.token);
+            localStorage.setItem('user_id', data._id);
+            localStorage.setItem('username', data.username);
+            setToken(data.token);
+        } catch (err) {
+            setError(err.message || 'Google Authentication failed');
+        }
+    };
+
     if (isLoading) {
         return <div className={styles.loadingScreen}>Loading Tracker...</div>;
     }
 
     if (!token) {
         return (
-            <div className={styles.authContainer}>
-                <div className={styles.authCard}>
+            <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"}>
+                <div className={styles.authContainer}>
+                    <div className={styles.authCard}>
                     <img src="/logo.svg" alt="Life Tracker" className={styles.logo} onError={(e) => e.target.style.display = 'none'} />
                     <h1 className={styles.authTitle}>Life Tracker</h1>
                     <p className={styles.authSubtitle}>
@@ -103,8 +119,16 @@ export default function AuthGuard({ children }) {
                     >
                         {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
                     </button>
+
+                    <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                        <GoogleLogin 
+                            onSuccess={handleGoogleSuccess}
+                            onError={() => setError('Google Login Failed')}
+                        />
+                    </div>
                 </div>
             </div>
+            </GoogleOAuthProvider>
         );
     }
 

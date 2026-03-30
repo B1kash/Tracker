@@ -72,6 +72,9 @@ export async function login(username, password) {
 export async function register(username, password) {
   return apiCall('/auth/register', 'POST', { username, password });
 }
+export async function googleLogin(idToken) {
+  return apiCall('/auth/google', 'POST', { idToken });
+}
 
 // ===== GAMIFICATION =====
 export async function getGamificationData() {
@@ -214,6 +217,35 @@ export async function uploadGymPhoto(dateStr, base64, mimetype = 'image/jpeg') {
 }
 export async function deleteGymPhoto(id) {
   return apiCall(`/gym/photos/${id}`, 'DELETE');
+}
+
+// ===== AI INTEGRATION =====
+export async function getAICoachAdvice() {
+  return apiCall('/ai/coach', 'GET');
+}
+export async function getAIRoast() {
+  return apiCall('/ai/roast', 'GET');
+}
+export async function analyzeDietWithAI(text, imageBase64, date) {
+  return apiCall('/ai/diet', 'POST', { text, imageBase64, date });
+}
+export async function generateWorkoutTemplateWithAI(prompt) {
+  return apiCall('/ai/workout-template', 'POST', { prompt });
+}
+export async function generateCurriculumWithAI(topic) {
+  return apiCall('/ai/curriculum', 'POST', { topic });
+}
+export async function getDailyBriefWithAI() {
+  return apiCall('/ai/brief', 'GET');
+}
+export async function getSupplementAdviceWithAI() {
+  return apiCall('/ai/supplements', 'GET');
+}
+export async function updateDietTargets(targets) {
+  return apiCall('/auth/diet-targets', 'PUT', targets);
+}
+export async function generateDietPlanWithAI(data) {
+  return apiCall('/ai/diet-plan', 'POST', data);
 }
 
 // ===== BULK FETCHER (Used exclusively for Calendar) =====

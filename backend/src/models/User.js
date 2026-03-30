@@ -9,10 +9,19 @@ const UserSchema = new mongoose.Schema({
         trim: true,
         minlength: 3
     },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    email: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
     password: {
         type: String,
-        required: true,
-        minlength: 6
+        required: false,
     },
     gamification: {
         xp: { type: Number, default: 0 },
@@ -42,7 +51,7 @@ const UserSchema = new mongoose.Schema({
 
 // Hash password before saving
 UserSchema.pre('save', async function () {
-    if (!this.isModified('password')) {
+    if (!this.isModified('password') || !this.password) {
         return;
     }
     const salt = await bcrypt.genSalt(10);

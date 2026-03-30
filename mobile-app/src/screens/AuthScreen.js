@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { login, register, setToken } from '../lib/storage';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { login, register, googleLogin, setToken } from '../lib/storage';
+
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+});
 
 export default function AuthScreen({ onLoginSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -32,6 +37,26 @@ export default function AuthScreen({ onLoginSuccess }) {
       const msg = e.message || "Unknown error";
       Alert.alert("Failed", isLogin ? `Login failed: ${msg}` : `Registration failed: ${msg}`);
       console.error("Auth Exception:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken || userInfo.idToken;
+
+      setLoading(true);
+      const data = await googleLogin(idToken);
+      if (data && data.token) {
+        await setToken(data.token, data.id, data.username);
+        onLoginSuccess();
+      }
+    } catch (error) {
+      console.error("Google Signin Exception:", error);
+      Alert.alert("Google Login Failed", error.message);
     } finally {
       setLoading(false);
     }
@@ -106,6 +131,17 @@ export default function AuthScreen({ onLoginSuccess }) {
               {isLogin ? 'Sign In' : 'Create Account'}
             </Text>
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+            style={[styles.primaryButton, { backgroundColor: '#fff', flexDirection: 'row', gap: 10, marginTop: 15 }, loading && styles.disabledButton]} 
+            onPress={handleGoogleLogin} 
+            disabled={loading}
+        >
+            <Ionicons name="logo-google" size={20} color="#000" />
+            <Text style={[styles.primaryButtonText, { color: '#000' }]}>
+              Continue with Google
+            </Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => setIsLogin(!isLogin)} style={styles.switchButton}>

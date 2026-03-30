@@ -1,5 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // @desc    Logout user
 // @route   POST /api/auth/logout
@@ -107,9 +110,60 @@ const getMe = async (req, res) => {
     res.status(200).json(req.user);
 };
 
+// @desc    Google Login / Registration
+// @route   POST /api/auth/google
+// @access  Public
+const googleLogin = async (req, res) => {
+    try {
+        const { idToken } = req.body;
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+        const payload = ticket.getPayload();
+        const userid = payload['sub'];
+        const email = payload['email'];
+        const name = payload['name'];
+
+        let user = await User.findOne({ $or: [{ email }, { googleId: userid }] });
+
+        if (!user) {
+            // New User Registration
+            let baseUsername = name ? name.replace(/\s+/g, '').toLowerCase() : email.split('@')[0];
+            let username = baseUsername;
+            let counter = 1;
+            while (await User.findOne({ username })) {
+                username = `${baseUsername}${counter}`;
+                counter++;
+            }
+
+            user = await User.create({
+                username,
+                email,
+                googleId: userid
+            });
+        } else if (!user.googleId || !user.email) {
+            user.googleId = userid;
+            user.email = email;
+            await user.save();
+        }
+
+        res.json({
+            _id: user.id,
+            username: user.username,
+            gamification: user.gamification,
+            token: generateToken(user._id)
+        });
+    } catch (error) {
+        console.error("Google Login Error:", error);
+        res.status(401).json({ message: 'Invalid Google Token' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
+    googleLogin,
     getMe,
     logoutUser,
     updateDietTargets
