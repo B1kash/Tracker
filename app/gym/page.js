@@ -97,7 +97,10 @@ export default function GymPage() {
     // Cardio form
     const [cardioForm, setCardioForm] = useState({ type: 'Running', duration: '', distance: '', calories: '' });
     // Diet form
+    // Diet form
     const [dietForm, setDietForm] = useState({ meal: 'Breakfast', food: '', calories: '', protein: '', carbs: '', fats: '', notes: '' });
+
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const dateStr = getDateStr(selectedDate);
     const weekDates = getWeekDates(selectedDate);
@@ -910,49 +913,67 @@ export default function GymPage() {
             {/* ========== PHOTOS TAB ========== */}
             {activeTab === 'photos' && (
                 <>
-                    <div className={styles.photoUploadBanner}>
-                        <div className={styles.photoUploadInfo}>
-                            <h3 className={styles.photoUploadTitle}>Progress Updates</h3>
-                            <p className={styles.photoUploadDesc}>Upload a photo to visually track your physique over time. Images are heavily compressed and saved to the cloud (limit 3 per day).</p>
-                        </div>
-                        <label className={`btn btn-primary ${uploading || isFuture || photos.filter(p => p.date === dateStr).length >= 3 ? styles.uploadingBtn : ''}`} style={isFuture || photos.filter(p => p.date === dateStr).length >= 3 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
-                            <IoCloudUploadOutline size={18} /> {uploading ? 'Processing...' : 'Upload Photo'}
-                            <input type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploading || isFuture || photos.filter(p => p.date === dateStr).length >= 3} style={{ display: 'none' }} />
-                        </label>
-                    </div>
+                    {/* Minimalist Photos Timeline */}
+                    {(() => {
+                        const grouped = photos.reduce((acc, p) => {
+                            if (!acc[p.date]) acc[p.date] = [];
+                            acc[p.date].push(p);
+                            return acc;
+                        }, {});
+                        
+                        // Force the actively selected date to appear so user has an upload bucket
+                        if (!grouped[dateStr]) grouped[dateStr] = [];
 
-                    {photos.length === 0 ? (
-                        <EmptyState
-                            title="No progress photos"
-                            message="Take your first physique update photo today. It will be securely uploaded to the cloud."
-                        />
-                    ) : (
-                        <div className={styles.photosTimeline}>
-                            {Object.entries(
-                                photos.reduce((acc, p) => {
-                                    if (!acc[p.date]) acc[p.date] = [];
-                                    acc[p.date].push(p);
-                                    return acc;
-                                }, {})
-                            ).sort((a, b) => b[0].localeCompare(a[0])).map(([dateKey, dailyPhotos]) => (
-                                <div key={dateKey} className={styles.photoDateGroup}>
-                                    <h4 className={styles.photoDateHeader}>{new Date(dateKey).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</h4>
-                                    <div className={styles.photoGallery}>
-                                        {dailyPhotos.map((photo) => (
-                                            <div key={photo._id || photo.id} className={styles.photoCard}>
-                                                <img src={photo.url || photo.base64} alt={`Progress on ${photo.date}`} className={styles.photoImg} />
-                                                <div className={styles.photoOverlay}>
-                                                    <button className={styles.photoDeleteBtn} onClick={async () => { await deleteGymPhoto(photo._id || photo.id); await loadData(); }} disabled={isFuture}>
-                                                        <IoTrashOutline size={16} />
-                                                    </button>
-                                                </div>
+                        return (
+                            <div className={styles.photosTimeline}>
+                                {Object.entries(grouped)
+                                    .sort((a, b) => b[0].localeCompare(a[0]))
+                                    .map(([dateKey, dailyPhotos]) => (
+                                        <div key={dateKey} className={styles.photoDateGroup}>
+                                            <div className={styles.photoDateHeaderWrapper}>
+                                                <h4 className={styles.photoDateHeader}>
+                                                    {new Date(dateKey).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </h4>
+                                                
+                                                {/* Inline Upload Button for selected date */}
+                                                {dateKey === dateStr && !isFuture && dailyPhotos.length < 3 && (
+                                                    <label className={styles.photoAddBtn} style={{ opacity: uploading ? 0.5 : 1 }}>
+                                                        {uploading ? <div className="spinner-border text-light" style={{ width: '1rem', height: '1rem', borderWidth: '0.15em' }} /> : <IoAdd size={20} />}
+                                                        <input type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploading} style={{ display: 'none' }} />
+                                                    </label>
+                                                )}
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+
+                                            {dailyPhotos.length === 0 ? (
+                                                <div className={styles.photoEmptyState}>
+                                                    <IoImageOutline size={32} color="#334155" />
+                                                    <p style={{ margin: 0 }}>{isFuture ? 'No photos for future dates' : 'No photos yet for this layout'}</p>
+                                                </div>
+                                            ) : (
+                                                <div className={styles.photoGallery}>
+                                                    {dailyPhotos.map((photo) => (
+                                                        <div key={photo._id || photo.id} className={styles.photoCard}>
+                                                            <img 
+                                                              src={photo.url || photo.base64} 
+                                                              alt={`Progress on ${photo.date}`} 
+                                                              className={styles.photoImg} 
+                                                              onClick={() => setSelectedImage(photo.url || photo.base64)}
+                                                              style={{ cursor: 'pointer' }}
+                                                            />
+                                                            <div className={styles.photoOverlay}>
+                                                                <button className={styles.photoDeleteBtn} onClick={async () => { await deleteGymPhoto(photo._id || photo.id); await loadData(); }} disabled={isFuture}>
+                                                                    <IoTrashOutline size={16} color="#e2e8f0" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                            </div>
+                        );
+                    })()}
                 </>
             )}
 
@@ -987,6 +1008,15 @@ export default function GymPage() {
                             <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }}>Save Targets</button>
                         </form>
                     </div>
+                </div>
+            )}
+            {/* Selected Image Fullscreen Modal */}
+            {selectedImage && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <button onClick={() => setSelectedImage(null)} style={{ position: 'absolute', top: '30px', right: '30px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', zIndex: 10000 }}>
+                        <IoCloseCircleOutline size={40} />
+                    </button>
+                    <img src={selectedImage} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} alt="Enlarged Progress" />
                 </div>
             )}
         </div>

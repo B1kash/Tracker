@@ -612,6 +612,7 @@ function PhotosTab({ dateStr, isFuture }) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -661,43 +662,78 @@ function PhotosTab({ dateStr, isFuture }) {
 
   if (loading) return <View style={s.center}><ActivityIndicator color="#ec4899" size="large" /></View>;
 
+  const formattedDate = new Date(dateStr).toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+  });
+
+  const handleAddPress = () => {
+    if (isFuture) return;
+    if (photos.length >= 3) {
+      Alert.alert('Limit reached', 'Maximum 3 photos per day allowed.');
+      return;
+    }
+    Alert.alert(
+      "Add Photo",
+      "Choose a photo source",
+      [
+        { text: "Camera", onPress: () => pickAndUpload(true) },
+        { text: "Gallery", onPress: () => pickAndUpload(false) },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
+  };
+
+  if (loading) return <View style={s.center}><ActivityIndicator color="#cbd5e1" size="large" /></View>;
+
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      <View style={[s.photoLimitBar, { backgroundColor: photos.length >= 3 ? 'rgba(244,63,94,0.1)' : 'rgba(139,92,246,0.1)' }]}>
-        <Ionicons name="images-outline" size={16} color={photos.length >= 3 ? '#f43f5e' : '#8b5cf6'} />
-        <Text style={[s.photoLimitText, { color: photos.length >= 3 ? '#f43f5e' : '#94a3b8' }]}>
-          {photos.length}/3 photos for this day
-        </Text>
-      </View>
-
-      {!isFuture && photos.length < 3 && (
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-          <TouchableOpacity style={[s.photoBtn, { flex: 1 }]} onPress={() => pickAndUpload(true)} disabled={uploading}>
-            <Ionicons name="camera-outline" size={20} color="#fff" />
-            <Text style={s.photoBtnText}>{uploading ? 'Uploading...' : 'Camera'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[s.photoBtn, { flex: 1, backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#8b5cf6' }]} onPress={() => pickAndUpload(false)} disabled={uploading}>
-            <Ionicons name="images-outline" size={20} color="#8b5cf6" />
-            <Text style={[s.photoBtnText, { color: '#8b5cf6' }]}>Gallery</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {photos.length === 0 && (
-        <View style={s.empty}><Ionicons name="camera-outline" size={48} color="#334155" />
-          <Text style={s.emptyText}>{isFuture ? 'No photos for future dates' : 'No photos yet. Take one!'}</Text></View>
-      )}
-
-      <View style={s.photoGrid}>
-        {photos.map(photo => (
-          <View key={photo._id || photo.id} style={s.photoContainer}>
-            <Image source={{ uri: photo.url }} style={s.photoImg} resizeMode="cover" />
-            <TouchableOpacity style={s.deletePhotoBtn} onPress={() => removePhoto(photo._id || photo.id)}>
-              <Ionicons name="trash" size={14} color="#fff" />
+      {/* Sleek Dark Card */}
+      <View style={s.photoCard}>
+        {/* Header */}
+        <View style={s.photoCardHeader}>
+          <Text style={s.photoCardDate}>{formattedDate}</Text>
+          {!isFuture && photos.length < 3 && (
+            <TouchableOpacity onPress={handleAddPress} style={s.photoCardAddBtn} disabled={uploading}>
+              {uploading ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="add" size={20} color="#fff" />}
             </TouchableOpacity>
-          </View>
-        ))}
+          )}
+        </View>
+
+        {/* Content */}
+        <View style={s.photoCardBody}>
+          {photos.length === 0 ? (
+            <View style={s.photoEmpty}>
+              <Ionicons name="camera-outline" size={32} color="#334155" />
+              <Text style={s.photoEmptyText}>{isFuture ? 'No photos for future dates' : 'No photos yet for this layout'}</Text>
+            </View>
+          ) : (
+            <View style={s.photoGrid}>
+              {photos.map(photo => (
+                <View key={photo._id || photo.id} style={s.photoContainer}>
+                  <TouchableOpacity activeOpacity={0.8} style={s.photoImg} onPress={() => setSelectedImage(photo.url || photo.base64)}>
+                    <Image source={{ uri: photo.url || photo.base64 }} style={s.photoImg} resizeMode="cover" />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={s.deletePhotoBtn} onPress={() => removePhoto(photo._id || photo.id)}>
+                    <Ionicons name="trash-outline" size={14} color="#e2e8f0" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
+
+      <Modal visible={!!selectedImage} transparent animationType="fade" onRequestClose={() => setSelectedImage(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' }}>
+          <TouchableOpacity style={{ position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10 }} onPress={() => setSelectedImage(null)}>
+            <Ionicons name="close" size={32} color="#fff" />
+          </TouchableOpacity>
+          <ScrollView minimumZoomScale={1} maximumZoomScale={3} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
+            {selectedImage && <Image source={{ uri: selectedImage }} style={{ width: '100%', height: 600, resizeMode: 'contain' }} />}
+          </ScrollView>
+        </View>
+      </Modal>
+
     </ScrollView>
   );
 }
@@ -815,15 +851,18 @@ const s = StyleSheet.create({
   pillText: { color: '#94a3b8', fontWeight: '600', fontSize: 13 },
   pillTextActive: { color: '#fff' },
 
-  // Photos
-  photoLimitBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 12, marginBottom: 16 },
-  photoLimitText: { fontSize: 13, fontWeight: '600' },
-  photoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#ec4899', borderRadius: 14, padding: 14 },
-  photoBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  // Photos minimalist redesign
+  photoCard: { backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', overflow: 'hidden' },
+  photoCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  photoCardDate: { color: '#f8fafc', fontWeight: '800', fontSize: 16 },
+  photoCardAddBtn: { backgroundColor: 'rgba(255,255,255,0.1)', width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  photoCardBody: { padding: 16 },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   photoContainer: { width: '47%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden', position: 'relative' },
   photoImg: { width: '100%', height: '100%' },
-  deletePhotoBtn: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 14, padding: 5 },
+  deletePhotoBtn: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  photoEmpty: { alignItems: 'center', paddingVertical: 30, gap: 10 },
+  photoEmptyText: { color: '#475569', fontSize: 14 },
 
   // New Diet Sync Styles
   macroContainer: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
