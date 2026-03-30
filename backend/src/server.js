@@ -1,6 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const helmet = require('helmet');
 const connectDB = require('./config/db');
 
 // Load env vars
@@ -11,12 +12,25 @@ connectDB();
 
 const app = express();
 
-// Body parser
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+// Secure HTTP headers
+app.use(helmet());
 
-// Enable CORS
-app.use(cors());
+// Enable CORS with reasonable defaults for a modern Web+Mobile API
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://yourapp.com', 'trackerapp://', 'exp://'] // Restrict down if in production
+        : '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+}));
+
+// Route-Specific Body parser (Large payload required for photos)
+app.use('/api/gym/photos', express.json({ limit: '10mb' }));
+app.use('/api/gym/photos', express.urlencoded({ extended: false, limit: '10mb' }));
+
+// Global Body parser clamped down to prevent JSON-DoS
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: false, limit: '100kb' }));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));

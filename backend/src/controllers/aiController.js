@@ -162,6 +162,7 @@ const generateWorkoutTemplate = async (req, res) => {
     try {
         const { prompt } = req.body;
         if (!prompt) return res.status(400).json({ message: 'Prompt is required' });
+        if (prompt.length > 250) return res.status(400).json({ message: 'Prompt exceeds the 250 character safety limit.' });
 
         const systemPrompt = `You are a professional strength and conditioning coach. A user has asked you to generate a workout routine based on this request: "${prompt}".
 Create a logical, effective workout routine grouped by DAY. You MUST return ONLY a raw JSON ARRAY of templates in this exact format without any markdown wrappers (no \`\`\`json):
@@ -211,6 +212,7 @@ const generateDailyRoutine = async (req, res) => {
     try {
         const { prompt, date } = req.body;
         if (!prompt) return res.status(400).json({ message: 'Prompt is required' });
+        if (prompt.length > 250) return res.status(400).json({ message: 'Prompt exceeds the 250 character safety limit.' });
 
         const systemPrompt = `You are a professional strength and conditioning coach. A user has given you their constraints for today: "${prompt}".
 Create a logical, effective workout strictly for this DAY. You MUST return ONLY a raw JSON strictly in this format without markdown (no \`\`\`json):

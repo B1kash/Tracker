@@ -45,7 +45,9 @@ const addPhoto = async (req, res) => {
     try {
         const { dateStr, base64, mimetype = 'image/jpeg' } = req.body;
         if (!dateStr || !base64) return res.status(400).json({ message: 'dateStr and base64 required' });
-
+        if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(mimetype)) {
+            return res.status(400).json({ message: 'Invalid file format. Only JPEG, PNG, WEBP, and HEIC are allowed.' });
+        }
         // Enforce 3 photos per day
         const existingCount = await GymPhoto.countDocuments({ user: req.user.id, date: dateStr });
         if (existingCount >= 3) {

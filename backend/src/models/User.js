@@ -22,6 +22,7 @@ const UserSchema = new mongoose.Schema({
     password: {
         type: String,
         required: false,
+        minlength: [6, 'Password must be at least 6 characters']
     },
     gamification: {
         xp: { type: Number, default: 0 },
