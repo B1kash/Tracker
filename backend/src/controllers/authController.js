@@ -152,11 +152,28 @@ const googleLogin = async (req, res) => {
             _id: user.id,
             username: user.username,
             gamification: user.gamification,
+            isPrivate: user.isPrivate,
             token: generateToken(user._id)
         });
     } catch (error) {
         console.error("Google Login Error:", error);
         res.status(401).json({ message: 'Invalid Google Token' });
+    }
+};
+
+// @desc    Toggle Privacy
+// @route   PUT /api/auth/privacy
+// @access  Private
+const togglePrivacy = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        
+        user.isPrivate = !user.isPrivate;
+        await user.save();
+        res.status(200).json({ isPrivate: user.isPrivate });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
@@ -166,5 +183,6 @@ module.exports = {
     googleLogin,
     getMe,
     logoutUser,
-    updateDietTargets
+    updateDietTargets,
+    togglePrivacy
 };

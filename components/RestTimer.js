@@ -10,6 +10,7 @@ export default function RestTimer() {
     const [visible, setVisible] = useState(false);
     const [seconds, setSeconds] = useState(DEFAULT_SECONDS);
     const [running, setRunning] = useState(false);
+    const [initialDuration, setInitialDuration] = useState(DEFAULT_SECONDS);
     const intervalRef = useRef(null);
 
     const playBeep = () => {
@@ -51,17 +52,25 @@ export default function RestTimer() {
     const resetTimer = () => {
         clearInterval(intervalRef.current);
         setRunning(false);
-        setSeconds(DEFAULT_SECONDS);
+        setSeconds(initialDuration);
     };
 
     // Listen for global 'start_rest_timer' event dispatched by gym page on set completion
     useEffect(() => {
         const handleStart = () => {
+            const enabled = localStorage.getItem('restTimerEnabled') !== 'false';
+            if (!enabled) return;
+
+            const customDuration = parseInt(localStorage.getItem('restTimerDuration')) || DEFAULT_SECONDS;
+            setInitialDuration(customDuration);
             setVisible(true);
-            resetTimer();
+
+            clearInterval(intervalRef.current);
+            setRunning(false);
+            
             // Auto-start after a small delay
             setTimeout(() => {
-                setSeconds(DEFAULT_SECONDS);
+                setSeconds(customDuration);
                 setRunning(true);
             }, 100);
         };
@@ -81,7 +90,7 @@ export default function RestTimer() {
 
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    const pct = (seconds / DEFAULT_SECONDS) * 100;
+    const pct = (seconds / initialDuration) * 100;
     const isDone = seconds === 0;
     const radius = 36;
     const circumference = 2 * Math.PI * radius;
@@ -120,8 +129,11 @@ export default function RestTimer() {
                 {running ? (
                     <button className={styles.btn} onClick={pauseTimer}><IoPauseOutline size={16} /> Pause</button>
                 ) : (
-                    <button className={styles.btn} onClick={() => setRunning(true)} disabled={isDone && seconds === 0}>
-                        <IoPlayOutline size={16} /> {seconds === DEFAULT_SECONDS ? 'Start' : 'Resume'}
+                    <button className={styles.btn} onClick={() => {
+                        if (seconds === 0) setSeconds(initialDuration);
+                        setRunning(true);
+                    }}>
+                        <IoPlayOutline size={16} /> {seconds === initialDuration ? 'Start' : 'Resume'}
                     </button>
                 )}
                 <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={resetTimer}>

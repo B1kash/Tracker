@@ -1,0 +1,162 @@
+.tabContainer {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    border-radius: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.tab:hover {
+    background: var(--bg-hover);
+}
+
+.activeTab {
+    background: var(--accent-purple);
+    color: white;
+    border-color: var(--accent-purple);
+}
+
+.userCard {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+.rankCircle {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-right: 15px;
+}
+
+.userInfo {
+    flex: 1;
+}
+
+.username {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.userStats {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.xpBox {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px;
+}
+
+.emptySquad {
+    text-align: center;
+    padding: 40px;
+}
+
+.emptySquad h2 {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+.questBox {
+    background: var(--bg-input);
+    border: 1px solid var(--accent-purple);
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.questHeader {
+    color: var(--accent-purple);
+    font-size: 0.8rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.progressBar {
+    height: 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--accent-green);
+    border-radius: 5px;
+}
+
+/* Modal */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 25px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+}
+
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--accent-purple);
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 1001;
+    font-weight: bold;
+}

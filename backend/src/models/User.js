@@ -41,6 +41,9 @@ const UserSchema = new mongoose.Schema({
             type: { type: String, enum: ['gym', 'cardio', 'diet', 'habits'] }
         }]
     },
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    squad: { type: mongoose.Schema.Types.ObjectId, ref: 'Squad', default: null },
+    isPrivate: { type: Boolean, default: false },
     dietTargets: {
         calories: { type: Number, default: 2000 },
         protein: { type: Number, default: 150 },

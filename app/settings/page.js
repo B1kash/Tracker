@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IoDownloadOutline, IoPersonOutline, IoShieldCheckmarkOutline, IoTrashOutline, IoNotificationsOutline, IoTimeOutline, IoMoonOutline, IoSunnyOutline, IoColorPaletteOutline } from 'react-icons/io5';
+import { IoDownloadOutline, IoPersonOutline, IoShieldCheckmarkOutline, IoTrashOutline, IoNotificationsOutline, IoTimeOutline, IoMoonOutline, IoSunnyOutline, IoColorPaletteOutline, IoLockClosedOutline } from 'react-icons/io5';
 import { useTheme } from '@/components/ThemeProvider';
-import { getPushPublicKey, getPushSettings, updatePushSettings, subscribeToPush, getGamificationData, updateGamificationSettings } from '@/lib/storage';
+import { getPushPublicKey, getPushSettings, updatePushSettings, subscribeToPush, getGamificationData, updateGamificationSettings, getMe, togglePrivacy } from '@/lib/storage';
 import styles from './page.module.css';
 
 async function apiCall(endpoint, method = 'GET', body = null) {
@@ -39,8 +39,11 @@ export default function SettingsPage() {
     const [pushEnabled, setPushEnabled] = useState(false);
     const [reminderTime, setReminderTime] = useState('08:00');
     
-    // Custom Streak logic
     const [weeklyTrainDays, setWeeklyTrainDays] = useState(5);
+    
+    // Privacy & Preferences
+    const [isPrivate, setIsPrivate] = useState(false);
+    const [timerSettings, setTimerSettings] = useState({ enabled: true, duration: 90 });
     
     // Theme
     const { theme, toggleTheme } = useTheme();
@@ -57,11 +60,18 @@ export default function SettingsPage() {
                 setReminderTime(settings.habitReminderTime || '08:00');
             }
             
-            // Load Gamification Settings
             const gamData = await getGamificationData();
             if (gamData && gamData.weeklyTrainDays) {
                 setWeeklyTrainDays(gamData.weeklyTrainDays);
             }
+
+            const meData = await getMe();
+            if (meData && meData.isPrivate !== undefined) setIsPrivate(meData.isPrivate);
+
+            setTimerSettings({
+                enabled: localStorage.getItem('restTimerEnabled') !== 'false',
+                duration: parseInt(localStorage.getItem('restTimerDuration')) || 90
+            });
         }
         load();
     }, []);
@@ -142,6 +152,23 @@ export default function SettingsPage() {
         setExporting(false);
     };
 
+    const handleTogglePrivacy = async () => {
+        try {
+            const data = await togglePrivacy();
+            setIsPrivate(data.isPrivate);
+            showMsg('✅ Privacy updated!');
+        } catch {
+            showMsg('❌ Failed to update privacy.');
+        }
+    };
+
+    const handleTimerChange = (field, val) => {
+        const next = { ...timerSettings, [field]: val };
+        setTimerSettings(next);
+        if (field === 'enabled') localStorage.setItem('restTimerEnabled', val);
+        if (field === 'duration') localStorage.setItem('restTimerDuration', val);
+    };
+
     const exportAllJSON = async () => {
         setExporting(true);
         try {
@@ -198,6 +225,14 @@ export default function SettingsPage() {
                             <div className={styles.profileName}>{username}</div>
                             <div className={styles.profileSub}>Life Tracker Member</div>
                         </div>
+                        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <button className="btn btn-secondary btn-sm" onClick={handleTogglePrivacy}>
+                                {isPrivate ? <><IoLockClosedOutline/> Publicize Profile</> : <><IoShieldCheckmarkOutline/> Make Profile Private</>}
+                            </button>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '5px' }}>
+                                {isPrivate ? 'Hidden from Leaderboards' : 'Visible on Leaderboards'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -252,6 +287,39 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Application Preferences */}
+            <div className={`card ${styles.section}`}>
+                <h3 className={styles.sectionTitle}><IoTimeOutline /> Workout Preferences</h3>
+                
+                <div className={styles.settingRow}>
+                    <div className={styles.settingInfo}>
+                        <div className={styles.settingName}>Auto-Start Rest Timer</div>
+                        <div className={styles.settingDesc}>Automatically pops up the rest timer when you finish a set</div>
+                    </div>
+                    <label className={styles.switch}>
+                        <input type="checkbox" checked={timerSettings.enabled} onChange={(e) => handleTimerChange('enabled', e.target.checked)} />
+                        <span className={styles.slider}></span>
+                    </label>
+                </div>
+
+                {timerSettings.enabled && (
+                    <div className={styles.settingRow}>
+                        <div className={styles.settingInfo}>
+                            <div className={styles.settingName}>Default Rest Duration</div>
+                            <div className={styles.settingDesc}>How long you want to rest between sets</div>
+                        </div>
+                        <select className="form-select" style={{ width: '150px' }} value={timerSettings.duration} onChange={(e) => handleTimerChange('duration', parseInt(e.target.value))}>
+                            <option value={30}>30 Seconds</option>
+                            <option value={60}>60 Seconds</option>
+                            <option value={90}>90 Seconds</option>
+                            <option value={120}>2 Minutes</option>
+                            <option value={180}>3 Minutes</option>
+                            <option value={300}>5 Minutes</option>
+                        </select>
+                    </div>
+                )}
             </div>
 
             {/* Appearance Section */}

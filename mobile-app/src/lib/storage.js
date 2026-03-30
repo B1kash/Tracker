@@ -248,6 +248,22 @@ export async function generateDietPlanWithAI(data) {
   return apiCall('/ai/diet-plan', 'POST', data);
 }
 
+export async function getLeaderboard() {
+  try { return await apiCall('/social/leaderboard'); } catch { return { global: [], friends: [] }; }
+}
+export async function addFriend(username) {
+  return apiCall('/social/friends', 'POST', { username });
+}
+export async function getSquad() {
+  try { return await apiCall('/social/squad'); } catch { return { squad: null }; }
+}
+export async function createSquad(name) {
+  return apiCall('/social/squad', 'POST', { name });
+}
+export async function joinSquad(inviteCode) {
+  return apiCall('/social/squad/join', 'POST', { inviteCode });
+}
+
 // ===== BULK FETCHER (Used exclusively for Calendar) =====
 export async function getGymWorkouts() {
   try { return await apiCall('/gym/workouts'); } catch { return []; }

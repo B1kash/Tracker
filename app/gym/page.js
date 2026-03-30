@@ -13,8 +13,8 @@ import {
     getDietByDate, addDietLog, deleteDietLog,
     getGymPhotos, addGymPhoto, deleteGymPhoto,
     getWorkoutTemplates, createWorkoutTemplate, deleteWorkoutTemplate,
-    generateWorkoutTemplateWithAI, analyzeDietWithAI,
-    updateDietTargets, generateDietPlanWithAI, getMe
+    generateWorkoutTemplateWithAI, generateDailyRoutineWithAI, analyzeDietWithAI,
+    updateDietTargets, generateDietPlanWithAI, getMe, addXP
 } from '@/lib/storage';
 import { triggerGamificationUpdate } from '@/lib/events';
 import { IoSettingsOutline, IoSparklesOutline, IoRestaurantOutline, IoChevronDownOutline, IoChevronUpOutline } from 'react-icons/io5';
@@ -68,6 +68,8 @@ export default function GymPage() {
     // AI States
     const [aiTemplatePrompt, setAiTemplatePrompt] = useState('');
     const [generatingTemplate, setGeneratingTemplate] = useState(false);
+    const [aiRoutinePrompt, setAiRoutinePrompt] = useState('');
+    const [generatingRoutine, setGeneratingRoutine] = useState(false);
     const [dietSnapText, setDietSnapText] = useState('');
     const [analyzingDiet, setAnalyzingDiet] = useState(false);
     
@@ -81,6 +83,8 @@ export default function GymPage() {
     const [aiDietConfig, setAiDietConfig] = useState({
         age: 25, weight: 70, height: 175, goal: 'Build Muscle', activity: 'Moderately Active', vegNonVeg: 'Non-Vegetarian'
     });
+    
+    const [timerEnabled, setTimerEnabled] = useState(true);
 
     const toggleTemplateExpand = (id) => {
         setExpandedTemplates((prev) => {
@@ -126,6 +130,7 @@ export default function GymPage() {
 
     useEffect(() => {
         loadData().then(() => setMounted(true));
+        setTimerEnabled(localStorage.getItem('restTimerEnabled') !== 'false');
     }, [loadData]);
 
     if (!mounted) return null;
@@ -209,6 +214,13 @@ export default function GymPage() {
         if (setDebounceTimer.current) clearTimeout(setDebounceTimer.current);
         await updateExerciseSets(dateStr, exId, newSets);
 
+        // Manage XP instantly 
+        if (willBeCompleted) {
+            await addXP(15); // +15 XP per set
+        } else {
+            await addXP(-15);
+        }
+
         // Trigger rest timer popup when completing a set
         if (willBeCompleted && typeof window !== 'undefined') {
             window.dispatchEvent(new Event('start_rest_timer'));
@@ -224,6 +236,7 @@ export default function GymPage() {
         setCardioEntries(prev => [...prev, temp]);
         setCardioForm({ type: 'Running', duration: '', distance: '', calories: '' });
         await addCardioLog({ ...cardioForm, date: dateStr, completed: true });
+        await addXP(50); // +50 XP for doing Cardio
         setCardioEntries(await getCardioByDate(dateStr));
     };
 
@@ -235,6 +248,7 @@ export default function GymPage() {
         setDietEntries(prev => [...prev, temp]);
         setDietForm({ meal: 'Breakfast', food: '', calories: '', protein: '', carbs: '', fats: '', notes: '' });
         await addDietLog({ ...dietForm, date: dateStr });
+        await addXP(20); // +20 XP for logging a Meal
         setDietEntries(await getDietByDate(dateStr));
     };
 
@@ -254,6 +268,20 @@ export default function GymPage() {
             alert('AI Failed to parse your meal.');
         }
         setAnalyzingDiet(false);
+    };
+
+    const handleGenerateDailyRoutine = async (e) => {
+        if (e) e.preventDefault();
+        if (!aiRoutinePrompt.trim()) return;
+        setGeneratingRoutine(true);
+        try {
+            await generateDailyRoutineWithAI(aiRoutinePrompt, dateStr);
+            setAiRoutinePrompt('');
+            setWorkout(await getWorkoutByDate(dateStr));
+        } catch (err) {
+            alert('Failed to generate today\'s routine.');
+        }
+        setGeneratingRoutine(false);
     };
 
     const handleUpdateTargets = async (e) => {
@@ -445,6 +473,20 @@ export default function GymPage() {
             {activeTab === 'exercises' && (
                 <>
                     <OneRMChart allWorkouts={allWorkouts} />
+                    
+                    {/* AI Daily Routine Generator */}
+                    <div style={{ background: 'linear-gradient(135deg, rgba(88,32,135,0.1), rgba(18,15,23,0.8))', padding: '15px', borderRadius: '12px', border: '1px dotted var(--accent-purple)', marginBottom: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-purple)', fontWeight: 'bold' }}>
+                            ✨ Auto-Build Today's Routine
+                        </div>
+                        <form onSubmit={handleGenerateDailyRoutine} style={{ display: 'flex', gap: '10px' }}>
+                            <input className="form-input" placeholder="e.g. 'I only have 30 mins and dumbbells'" value={aiRoutinePrompt} onChange={(e) => setAiRoutinePrompt(e.target.value)} disabled={generatingRoutine || isFuture} required style={{ border: 'none', background: 'rgba(0,0,0,0.3)', color: 'white', flex: 1 }} />
+                            <button type="submit" className="btn btn-sm" disabled={generatingRoutine || isFuture} style={{ background: 'var(--accent-purple)', color: 'white', border: 'none', whiteSpace: 'nowrap' }}>
+                                {generatingRoutine ? 'Thinking...' : 'Generate Plan'}
+                            </button>
+                        </form>
+                    </div>
+
                     <form onSubmit={handleAddExercise} className={styles.quickAdd}>
                         <input className="form-input" placeholder="Add exercise (e.g. Bench Press, Squats...)" value={newExercise} onChange={(e) => setNewExercise(e.target.value)} disabled={isFuture} />
                         <button type="submit" className="btn btn-primary btn-sm" disabled={isFuture}><IoAdd size={18} /> Add</button>
@@ -453,6 +495,16 @@ export default function GymPage() {
                         <div className="empty-inline">No exercises logged — type above and hit Add!</div>
                     ) : (
                         <div className={styles.exerciseList}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                                    <input type="checkbox" checked={timerEnabled} onChange={(e) => {
+                                        const val = e.target.checked;
+                                        setTimerEnabled(val);
+                                        localStorage.setItem('restTimerEnabled', val);
+                                    }} style={{ accentColor: 'var(--accent-purple)' }} />
+                                    Auto Rest Timer
+                                </label>
+                            </div>
                             {exercises.map((ex) => (
                                 <div key={ex._id || ex.id} className="exercise-block">
                                     <div className="exercise-header">
@@ -463,16 +515,28 @@ export default function GymPage() {
                                         </div>
                                     </div>
                                     {ex.sets.length > 0 && (
-                                        <table className="sets-table">
-                                            <thead><tr><th style={{ width: '50px' }}>Set</th><th>Reps</th><th>Weight</th><th style={{ width: '50px' }}>Done</th><th style={{ width: '40px' }}></th></tr></thead>
+                                        <table className="sets-table" style={{ width: '100%', maxWidth: '500px' }}>
+                                            <thead>
+                                                <tr>
+                                                    <th style={{ width: '50px' }}>Set</th>
+                                                    <th>Reps</th>
+                                                    <th>Weight (kg)</th>
+                                                    <th style={{ width: '50px', textAlign: 'center' }}>Done</th>
+                                                    <th style={{ width: '40px', textAlign: 'center' }}></th>
+                                                </tr>
+                                            </thead>
                                             <tbody>
                                                 {ex.sets.map((set, idx) => (
                                                     <tr key={set._id || set.id}>
                                                         <td><span className={styles.setNumber}>{idx + 1}</span></td>
-                                                        <td><input className="set-input" type="number" min="0" placeholder="0" value={set.reps || ''} onChange={(e) => handleSetChange(ex._id || ex.id, set._id || set.id, 'reps', e.target.value)} disabled={isFuture} /></td>
-                                                        <td><input className="set-input" placeholder="0 kg" value={set.weight || ''} onChange={(e) => handleSetChange(ex._id || ex.id, set._id || set.id, 'weight', e.target.value)} disabled={isFuture} /></td>
-                                                        <td><button className={`set-check ${set.completed ? 'done' : ''}`} onClick={() => handleToggleSet(ex._id || ex.id, set._id || set.id)} disabled={isFuture}>{set.completed && <IoCheckmarkSharp size={14} />}</button></td>
-                                                        <td><button className="btn-icon" onClick={() => handleRemoveSet(ex._id || ex.id, set._id || set.id)} disabled={isFuture}><IoCloseCircleOutline size={16} /></button></td>
+                                                        <td style={{ paddingRight: '10px' }}>
+                                                            <input className="set-input" type="number" min="0" placeholder="0" value={set.reps || ''} onChange={(e) => handleSetChange(ex._id || ex.id, set._id || set.id, 'reps', e.target.value)} disabled={isFuture} style={{ width: '100%', padding: '6px 10px' }} />
+                                                        </td>
+                                                        <td style={{ paddingRight: '10px' }}>
+                                                            <input className="set-input" type="number" placeholder="0" value={set.weight || ''} onChange={(e) => handleSetChange(ex._id || ex.id, set._id || set.id, 'weight', e.target.value)} disabled={isFuture} style={{ width: '100%', padding: '6px 10px' }} />
+                                                        </td>
+                                                        <td style={{ textAlign: 'center' }}><button className={`set-check ${set.completed ? 'done' : ''}`} onClick={() => handleToggleSet(ex._id || ex.id, set._id || set.id)} disabled={isFuture}>{set.completed && <IoCheckmarkSharp size={14} />}</button></td>
+                                                        <td style={{ textAlign: 'center' }}><button className="btn-icon" onClick={() => handleRemoveSet(ex._id || ex.id, set._id || set.id)} disabled={isFuture}><IoCloseCircleOutline size={18} /></button></td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -491,21 +555,44 @@ export default function GymPage() {
                     <h3 className={styles.sectionTitle}>Workout Templates</h3>
                     <p className={styles.sectionSubtitle}>Load a saved routine, or save today's workout as a new template.</p>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px', marginBottom: '25px' }}>
-                        <form onSubmit={handleSaveTemplate} style={{ background: 'var(--bg-card)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
-                                <IoSaveOutline size={18} /> Save Current Workout
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                        {/* Save Current Workout */}
+                        <form onSubmit={handleSaveTemplate} style={{ 
+                            background: 'linear-gradient(145deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2))', 
+                            padding: '20px', 
+                            borderRadius: '16px', 
+                            border: '1px solid rgba(255,255,255,0.08)', 
+                            display: 'flex', flexDirection: 'column', gap: '15px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '1.05rem' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.1)', padding: '6px', borderRadius: '8px', display: 'flex' }}><IoSaveOutline size={18} /></div>
+                                Save Current Workout
                             </div>
-                            <input className="form-input" placeholder="e.g. Push Day A" value={templateName} onChange={(e) => setTemplateName(e.target.value)} disabled={exercises.length === 0} required style={{ border: '1px solid rgba(255,255,255,0.1)' }} />
-                            <button type="submit" className="btn btn-primary btn-sm" disabled={exercises.length === 0}>Save Layout</button>
+                            <input className="form-input" placeholder="e.g. Push Day A" value={templateName} onChange={(e) => setTemplateName(e.target.value)} disabled={exercises.length === 0} required style={{ border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', padding: '12px', fontSize: '0.95rem' }} />
+                            <button type="submit" className="btn btn-sm" disabled={exercises.length === 0} style={{ background: 'var(--bg-secondary)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '10px' }}>
+                                Save Layout
+                            </button>
                         </form>
 
-                        <form onSubmit={handleGenerateTemplate} style={{ background: 'linear-gradient(135deg, rgba(88,32,135,0.2), rgba(18,15,23,0.8))', padding: '15px', borderRadius: '12px', border: '1px solid var(--accent-purple)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-purple)', fontWeight: 'bold' }}>
-                                ✨ AI Auto-Generator
+                        {/* AI Auto-Generator */}
+                        <form onSubmit={handleGenerateTemplate} style={{ 
+                            background: 'linear-gradient(145deg, rgba(139,92,246,0.15), rgba(18,15,23,0.9))', 
+                            padding: '20px', 
+                            borderRadius: '16px', 
+                            border: '1px solid rgba(139,92,246,0.4)', 
+                            display: 'flex', flexDirection: 'column', gap: '15px',
+                            boxShadow: '0 8px 30px rgba(139,92,246,0.15)',
+                            position: 'relative', overflow: 'hidden'
+                        }}>
+                            <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)', transform: 'translate(30%, -30%)' }}></div>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c4b5fd', fontWeight: 'bold', fontSize: '1.05rem', position: 'relative' }}>
+                                <div style={{ background: 'rgba(139,92,246,0.2)', padding: '6px', borderRadius: '8px', display: 'flex' }}><IoSparklesOutline size={18} /></div>
+                                AI Auto-Generator
                             </div>
-                            <input className="form-input" placeholder="e.g. '4-day upper body split'" value={aiTemplatePrompt} onChange={(e) => setAiTemplatePrompt(e.target.value)} disabled={generatingTemplate} required style={{ border: 'none', background: 'rgba(0,0,0,0.3)', color: 'white' }} />
-                            <button type="submit" className="btn btn-sm" disabled={generatingTemplate} style={{ background: 'var(--accent-purple)', color: 'white', border: 'none' }}>
+                            <input className="form-input" placeholder="e.g. '4-day upper body split'" value={aiTemplatePrompt} onChange={(e) => setAiTemplatePrompt(e.target.value)} disabled={generatingTemplate} required style={{ border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(0,0,0,0.3)', color: 'white', padding: '12px', fontSize: '0.95rem', position: 'relative' }} />
+                            <button type="submit" className="btn btn-sm" disabled={generatingTemplate} style={{ background: 'var(--accent-purple)', color: 'white', border: 'none', padding: '10px', fontWeight: 'bold', position: 'relative', boxShadow: '0 4px 15px rgba(139,92,246,0.4)' }}>
                                 {generatingTemplate ? 'Thinking...' : 'Generate New Routine'}
                             </button>
                         </form>

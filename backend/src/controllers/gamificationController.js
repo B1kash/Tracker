@@ -63,7 +63,10 @@ const addXP = async (req, res) => {
         const currentXp = user.gamification?.xp || 0;
         const XP_PER_LEVEL = 1000;
         const oldLevel = Math.floor(currentXp / XP_PER_LEVEL) + 1;
-        const newXp = currentXp + amount;
+        
+        let newXp = currentXp + amount;
+        if (newXp < 0) newXp = 0; // Prevent negative XP
+
         const newLevel = Math.floor(newXp / XP_PER_LEVEL) + 1;
 
         user.gamification.xp = newXp;
@@ -186,8 +189,6 @@ const updateQuestProgress = async (userId, type, amount = 1) => {
         return null;
     }
 };
-
-module.exports = { getGamificationData, addXP, checkAndUpdateStreak, updateQuestProgress };
 
 // @desc    Update Gamification Settings
 // @route   PUT /api/gamification/settings

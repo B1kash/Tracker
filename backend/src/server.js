@@ -21,6 +21,7 @@ app.use(cors());
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/gamification', require('./routes/gamificationRoutes'));
+app.use('/api/social', require('./routes/socialRoutes'));
 app.use('/api/habits', require('./routes/habitRoutes'));
 app.use('/api/gym', require('./routes/gymRoutes'));
 app.use('/api/cardio', require('./routes/cardioRoutes'));

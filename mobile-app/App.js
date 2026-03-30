@@ -16,6 +16,7 @@ import BodyWeightScreen from './src/screens/BodyWeightScreen';
 import GoalsScreen from './src/screens/GoalsScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import SocialScreen from './src/screens/SocialScreen';
 import { getToken } from './src/lib/storage';
 
 const Tab = createBottomTabNavigator();
@@ -35,6 +36,7 @@ const AppTheme = {
 const ICONS = {
   Dashboard:  { active: 'grid',          inactive: 'grid-outline' },
   Habits:     { active: 'checkbox',      inactive: 'checkbox-outline' },
+  Social:     { active: 'people',        inactive: 'people-outline' },
   Gym:        { active: 'barbell',       inactive: 'barbell-outline' },
   Learning:   { active: 'book',          inactive: 'book-outline' },
   Content:    { active: 'videocam',      inactive: 'videocam-outline' },
@@ -103,6 +105,7 @@ function MainTabs() {
             </View>
           )
         })} />
+        <Tab.Screen name="Social" component={SocialScreen} />
         <Tab.Screen name="Habits" component={HabitsScreen} />
         <Tab.Screen name="Gym" component={GymScreen} />
         <Tab.Screen name="Learning" component={LearningScreen} />

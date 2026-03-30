@@ -69,31 +69,111 @@ export default function AICoachModal({ isOpen, onClose }) {
 
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
-            <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ maxWidth: '700px', width: '90%', maxHeight: '85vh', overflowY: 'auto', background: '#120f17', border: '1px solid #3d2254', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
+            <div className={styles.modalContent} onClick={e => e.stopPropagation()} style={{ maxWidth: '750px', width: '90%', maxHeight: '85vh', overflowY: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
                 <button className={styles.closeBtn} onClick={onClose} style={{ zIndex: 10 }}>
                     <IoClose size={24} />
                 </button>
                 
-                <div style={{ background: 'linear-gradient(180deg, rgba(88,32,135,0.15) 0%, rgba(18,15,23,0) 100%)', padding: '25px', margin: '-20px -20px 20px -20px', borderBottom: '1px solid rgba(88,32,135,0.2)' }}>
-                    <h2 className={styles.modalTitle} style={{ textAlign: 'left', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.8rem' }}>
+                <div style={{ background: 'linear-gradient(180deg, rgba(139,92,246,0.1) 0%, transparent 100%)', padding: '30px 25px', margin: '-20px -20px 25px -20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <h2 className={styles.modalTitle} style={{ textAlign: 'center', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '2.2rem' }}>
                         <span className="page-title-gradient">AI Oracle</span> <IoSparklesOutline style={{ color: 'var(--accent-purple)' }} />
                     </h2>
-                    <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>
-                        Consult the AI Oracle for deep insights into your physical progress, or ask it to brutally roast your weekly goals.
+                    <p style={{ color: 'var(--text-muted)', margin: '0 auto', fontSize: '1rem', textAlign: 'center', maxWidth: '500px', lineHeight: '1.5' }}>
+                        Consult the mystical intelligence. Seek guidance for your journey, or test your ego with a brutal roast.
                     </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '30px', flexWrap: 'wrap' }}>
-                    <button className="btn btn-primary" onClick={fetchCoachAdvice} disabled={loading} style={{ flex: '1 1 calc(50% - 12px)', display: 'flex', justifyContent: 'center', gap: '8px', padding: '12px', fontSize: '1rem', background: 'var(--accent-purple)', border: 'none' }}>
-                        <IoChatbubbleEllipsesOutline size={20} />
-                        Get Gym Advice
+                <style>{`
+                    .oracle-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 15px;
+                        margin-bottom: 30px;
+                    }
+                    .oracle-card {
+                        background: rgba(255,255,255,0.03);
+                        border: 1px solid rgba(255,255,255,0.06);
+                        border-radius: 16px;
+                        padding: 25px 15px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 15px;
+                        cursor: pointer;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        text-align: center;
+                    }
+                    .oracle-card:disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                    }
+                    .oracle-card:not(:disabled):hover {
+                        transform: translateY(-5px);
+                    }
+                    .oracle-card-title {
+                        font-weight: 700;
+                        font-size: 1.05rem;
+                        color: var(--text-primary);
+                    }
+                    .oracle-card-desc {
+                        font-size: 0.8rem;
+                        color: var(--text-muted);
+                        line-height: 1.4;
+                    }
+                    
+                    /* Specific Themes */
+                    .oracle-advice { background: linear-gradient(145deg, rgba(139,92,246,0.1), rgba(0,0,0,0)); border-color: rgba(139,92,246,0.2); }
+                    .oracle-advice:not(:disabled):hover { box-shadow: 0 10px 30px rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.6); }
+                    .oracle-advice .oracle-icon { color: #c4b5fd; background: rgba(139,92,246,0.2); }
+
+                    .oracle-roast { background: linear-gradient(145deg, rgba(244,63,94,0.1), rgba(0,0,0,0)); border-color: rgba(244,63,94,0.2); }
+                    .oracle-roast:not(:disabled):hover { box-shadow: 0 10px 30px rgba(244,63,94,0.15); border-color: rgba(244,63,94,0.6); }
+                    .oracle-roast .oracle-icon { color: #fda4af; background: rgba(244,63,94,0.2); }
+
+                    .oracle-supps { background: linear-gradient(145deg, rgba(16,185,129,0.1), rgba(0,0,0,0)); border-color: rgba(16,185,129,0.2); }
+                    .oracle-supps:not(:disabled):hover { box-shadow: 0 10px 30px rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.6); }
+                    .oracle-supps .oracle-icon { color: #6ee7b7; background: rgba(16,185,129,0.2); }
+
+                    .oracle-icon {
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 14px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+
+                    @media (max-width: 600px) {
+                        .oracle-grid { grid-template-columns: 1fr; }
+                        .oracle-card { padding: 20px; flex-direction: row; text-align: left; }
+                        .oracle-icon { flex-shrink: 0; }
+                    }
+                `}</style>
+
+                <div className="oracle-grid">
+                    <button className="oracle-card oracle-advice" onClick={fetchCoachAdvice} disabled={loading}>
+                        <div className="oracle-icon"><IoChatbubbleEllipsesOutline size={26} /></div>
+                        <div>
+                            <div className="oracle-card-title">Gym Advice</div>
+                            <div className="oracle-card-desc">Actionable tips to break plateaus.</div>
+                        </div>
                     </button>
-                    <button className="btn" onClick={fetchRoast} disabled={loading} style={{ flex: '1 1 calc(50% - 12px)', display: 'flex', justifyContent: 'center', gap: '8px', padding: '12px', fontSize: '1rem', background: 'linear-gradient(135deg, #ff4d4d 0%, var(--accent-orange) 100%)', color: 'white', border: 'none' }}>
-                        <IoFlameOutline size={20} />
-                        Roast My Progress
+                    
+                    <button className="oracle-card oracle-roast" onClick={fetchRoast} disabled={loading}>
+                        <div className="oracle-icon"><IoFlameOutline size={26} /></div>
+                        <div>
+                            <div className="oracle-card-title">Roast Me</div>
+                            <div className="oracle-card-desc">A brutal assessment of your weakness.</div>
+                        </div>
                     </button>
-                    <button className="btn" onClick={fetchSupplements} disabled={loading} style={{ flex: '1 1 100%', display: 'flex', justifyContent: 'center', gap: '8px', padding: '12px', fontSize: '1rem', background: 'rgba(32, 219, 133, 0.1)', color: 'var(--accent-green)', border: '1px solid var(--accent-green)' }}>
-                        💊 Suggest Supplements
+                    
+                    <button className="oracle-card oracle-supps" onClick={fetchSupplements} disabled={loading}>
+                        <div className="oracle-icon" style={{ fontSize: '1.4rem' }}>💊</div>
+                        <div>
+                            <div className="oracle-card-title">Supplements</div>
+                            <div className="oracle-card-desc">Stack recommendations for your goals.</div>
+                        </div>
                     </button>
                 </div>
 
@@ -106,14 +186,16 @@ export default function AICoachModal({ isOpen, onClose }) {
                     <div style={{ padding: '0px', textAlign: 'left' }}>
                         {(advice || roast) && (
                             <div className="ai-markdown-container" style={{ 
-                                background: roast ? 'linear-gradient(145deg, rgba(255,77,77,0.05), rgba(0,0,0,0))' : 'linear-gradient(145deg, rgba(138,43,226,0.05), rgba(0,0,0,0))', 
-                                padding: '25px', 
+                                background: roast ? 'linear-gradient(145deg, rgba(244,63,94,0.05), transparent)' : 'linear-gradient(145deg, rgba(139,92,246,0.05), transparent)', 
+                                padding: '30px', 
                                 borderRadius: '16px', 
                                 color: 'var(--text-primary)', 
-                                borderLeft: `4px solid ${roast ? 'var(--accent-orange)' : 'var(--accent-purple)'}`,
-                                boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)',
+                                borderLeft: `4px solid ${roast ? '#f43f5e' : '#8b5cf6'}`,
+                                borderTop: '1px solid rgba(255,255,255,0.05)',
+                                borderRight: '1px solid rgba(255,255,255,0.05)',
+                                borderBottom: '1px solid rgba(255,255,255,0.05)',
                                 fontSize: '1.05rem',
-                                lineHeight: '1.6'
+                                lineHeight: '1.7'
                             }}>
                                 <style>{`
                                     .ai-markdown-container h1, .ai-markdown-container h2, .ai-markdown-container h3 {

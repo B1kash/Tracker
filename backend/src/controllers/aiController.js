@@ -204,6 +204,54 @@ Create a logical, effective workout routine grouped by DAY. You MUST return ONLY
     }
 };
 
+// @desc    Generate Daily Routine and log directly to today
+// @route   POST /api/ai/daily-routine
+// @access  Private
+const generateDailyRoutine = async (req, res) => {
+    try {
+        const { prompt, date } = req.body;
+        if (!prompt) return res.status(400).json({ message: 'Prompt is required' });
+
+        const systemPrompt = `You are a professional strength and conditioning coach. A user has given you their constraints for today: "${prompt}".
+Create a logical, effective workout strictly for this DAY. You MUST return ONLY a raw JSON strictly in this format without markdown (no \`\`\`json):
+{
+  "exercises": [
+    { "name": "Dumbbell Bench Press", "sets": [ {"reps": 10}, {"reps": 10}, {"reps": 10} ] },
+    { "name": "Goblet Squat", "sets": [ {"reps": 12}, {"reps": 12} ] }
+  ]
+}`;
+        const genAI = getAI();
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent(systemPrompt);
+        let responseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(responseText);
+
+        const targetDate = date || new Date().toISOString().split('T')[0];
+        let workout = await GymWorkout.findOne({ user: req.user.id, date: targetDate });
+        
+        if (!workout) {
+            workout = new GymWorkout({
+                user: req.user.id,
+                date: targetDate,
+                exercises: []
+            });
+        }
+        
+        const newExercises = parsed.exercises.map(ex => ({
+            name: ex.name,
+            sets: ex.sets.map(s => ({ reps: s.reps || 0, weight: '', completed: false }))
+        }));
+        
+        workout.exercises = [...workout.exercises, ...newExercises];
+        await workout.save();
+        
+        res.status(200).json(workout);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: 'Failed to generate daily routine.' });
+    }
+};
+
 // @desc    Generate Learning Curriculum
 // @route   POST /api/ai/curriculum
 // @access  Private
@@ -319,5 +367,6 @@ module.exports = {
     generateCurriculum,
     getDailyBrief,
     getSupplementAdvice,
-    generateDietPlan
+    generateDietPlan,
+    generateDailyRoutine
 };
