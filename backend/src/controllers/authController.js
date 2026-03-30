@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const { uploadToS3, deleteFromS3 } = require('../config/s3');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -176,6 +177,67 @@ const togglePrivacy = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+// @desc    Update User Profile Stats (Name, Weight Targets, etc.)
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        
+        user.name = req.body.name || user.name;
+        user.height = req.body.height !== undefined ? req.body.height : user.height;
+        user.targetWeight = req.body.targetWeight !== undefined ? req.body.targetWeight : user.targetWeight;
+        user.targetBmi = req.body.targetBmi !== undefined ? req.body.targetBmi : user.targetBmi;
+
+        if (req.body.profilePicBase64) {
+            const mimetype = req.body.profilePicMime || 'image/jpeg';
+            if (['image/jpeg', 'image/png', 'image/webp'].includes(mimetype)) {
+                if (user.profilePic) await deleteFromS3(user.profilePic);
+                const cleanBase64 = req.body.profilePicBase64.replace(/^data:image\/\w+;base64,/, '');
+                const buffer = Buffer.from(cleanBase64, 'base64');
+                user.profilePic = await uploadToS3(buffer, mimetype, 'avatars');
+            }
+        }
+
+        await user.save();
+        res.status(200).json({ 
+            name: user.name, 
+            height: user.height, 
+            targetWeight: user.targetWeight, 
+            targetBmi: user.targetBmi,
+            profilePic: user.profilePic
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// @desc    Update Password
+// @route   PUT /api/auth/password
+// @access  Private
+const updatePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) return res.status(400).json({ message: 'Both current and new passwords are required' });
+        if (newPassword.length < 6) return res.status(400).json({ message: 'New password must be at least 6 characters' });
+
+        const user = await User.findById(req.user.id);
+        if (!user || user.googleId && !user.password) {
+             return res.status(400).json({ message: 'Cannot reset password for Google-only account' });
+        }
+
+        const isMatch = await user.matchPassword(currentPassword);
+        if (!isMatch) return res.status(401).json({ message: 'Invalid current password' });
+
+        user.password = newPassword;
+        await user.save();
+        
+        res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 
 module.exports = {
     registerUser,
@@ -184,5 +246,7 @@ module.exports = {
     getMe,
     logoutUser,
     updateDietTargets,
-    togglePrivacy
+    togglePrivacy,
+    updateProfile,
+    updatePassword
 };

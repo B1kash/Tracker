@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { IoDownloadOutline, IoPersonOutline, IoShieldCheckmarkOutline, IoTrashOutline, IoNotificationsOutline, IoTimeOutline, IoMoonOutline, IoSunnyOutline, IoColorPaletteOutline, IoLockClosedOutline } from 'react-icons/io5';
+import { useState, useEffect, useRef } from 'react';
+import { IoDownloadOutline, IoPersonOutline, IoShieldCheckmarkOutline, IoTrashOutline, IoNotificationsOutline, IoTimeOutline, IoMoonOutline, IoSunnyOutline, IoColorPaletteOutline, IoLockClosedOutline, IoCameraOutline } from 'react-icons/io5';
 import { useTheme } from '@/components/ThemeProvider';
-import { getPushPublicKey, getPushSettings, updatePushSettings, subscribeToPush, getGamificationData, updateGamificationSettings, getMe, togglePrivacy } from '@/lib/storage';
+import { getPushPublicKey, getPushSettings, updatePushSettings, subscribeToPush, getGamificationData, updateGamificationSettings, getMe, togglePrivacy, updateProfile, updatePassword } from '@/lib/storage';
 import styles from './page.module.css';
 
 async function apiCall(endpoint, method = 'GET', body = null) {
@@ -45,6 +45,13 @@ export default function SettingsPage() {
     const [isPrivate, setIsPrivate] = useState(false);
     const [timerSettings, setTimerSettings] = useState({ enabled: true, duration: 90 });
     
+    // Profile Fields
+    const [profile, setProfile] = useState({ name: '', height: '', targetWeight: '', targetBmi: '', profilePicBase64: null, profilePicMime: null });
+    const [profilePicPreview, setProfilePicPreview] = useState(null);
+    
+    // Auth Fields
+    const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '' });
+    
     // Theme
     const { theme, toggleTheme } = useTheme();
 
@@ -66,7 +73,16 @@ export default function SettingsPage() {
             }
 
             const meData = await getMe();
-            if (meData && meData.isPrivate !== undefined) setIsPrivate(meData.isPrivate);
+            if (meData) {
+                if (meData.isPrivate !== undefined) setIsPrivate(meData.isPrivate);
+                setProfile({
+                    name: meData.name || '',
+                    height: meData.height || '',
+                    targetWeight: meData.targetWeight || '',
+                    targetBmi: meData.targetBmi || ''
+                });
+                if (meData.profilePic) setProfilePicPreview(meData.profilePic);
+            }
 
             setTimerSettings({
                 enabled: localStorage.getItem('restTimerEnabled') !== 'false',
@@ -162,6 +178,79 @@ export default function SettingsPage() {
         }
     };
 
+    const handleSaveProfile = async (e) => {
+        e.preventDefault();
+        try {
+            const data = await updateProfile({
+                name: profile.name,
+                height: Number(profile.height) || null,
+                targetWeight: Number(profile.targetWeight) || null,
+                targetBmi: Number(profile.targetBmi) || null,
+                profilePicBase64: profile.profilePicBase64,
+                profilePicMime: profile.profilePicMime
+            });
+            showMsg('✅ Profile updated!');
+            if (data.profilePic) {
+                setProfilePicPreview(data.profilePic);
+                window.dispatchEvent(new Event('gamification_updated')); // Force sidebar refresh
+            }
+        } catch (e) {
+            showMsg('❌ Failed to update profile.');
+        }
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 500;
+                const MAX_HEIGHT = 500;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL(file.type || 'image/jpeg', 0.8);
+                setProfilePicPreview(dataUrl);
+                setProfile({ ...profile, profilePicBase64: dataUrl, profilePicMime: file.type || 'image/jpeg' });
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleSavePassword = async (e) => {
+        e.preventDefault();
+        try {
+            await updatePassword({
+                currentPassword: passwords.currentPassword,
+                newPassword: passwords.newPassword
+            });
+            showMsg('✅ Password updated successfully!');
+            setPasswords({ currentPassword: '', newPassword: '' });
+        } catch (e) {
+            showMsg('❌ ' + (e.message || 'Failed to update password.'));
+        }
+    };
+
     const handleTimerChange = (field, val) => {
         const next = { ...timerSettings, [field]: val };
         setTimerSettings(next);
@@ -220,7 +309,17 @@ export default function SettingsPage() {
                 </div>
                 <div className={styles.card}>
                     <div className={styles.profileRow}>
-                        <div className={styles.avatar}>{username[0]?.toUpperCase()}</div>
+                        <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
+                            {profilePicPreview ? (
+                                <img src={profilePicPreview} alt="Avatar" className={styles.avatar} style={{ objectFit: 'cover' }} />
+                            ) : (
+                                <div className={styles.avatar}>{username[0]?.toUpperCase()}</div>
+                            )}
+                            <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'var(--accent-purple)', borderRadius: '50%', padding: '4px', display: 'flex' }}>
+                                <IoCameraOutline size={14} color="white" />
+                            </div>
+                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
+                        </label>
                         <div>
                             <div className={styles.profileName}>{username}</div>
                             <div className={styles.profileSub}>Life Tracker Member</div>
@@ -234,6 +333,45 @@ export default function SettingsPage() {
                             </span>
                         </div>
                     </div>
+
+                    <form onSubmit={handleSaveProfile} style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        <div>
+                            <label className="form-label">Display Name</label>
+                            <input className="form-input" placeholder="How should we call you?" value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <div>
+                                <label className="form-label">Height (cm)</label>
+                                <input className="form-input" type="number" placeholder="e.g. 180" value={profile.height} onChange={e => setProfile({...profile, height: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="form-label">Target Weight (kg)</label>
+                                <input className="form-input" type="number" placeholder="e.g. 75" value={profile.targetWeight} onChange={e => setProfile({...profile, targetWeight: e.target.value})} />
+                            </div>
+                        </div>
+                        <button type="submit" className="btn btn-primary">Save Profile Info</button>
+                    </form>
+                </div>
+            </div>
+
+            {/* Change Password */}
+            <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                    <IoLockClosedOutline size={18} />
+                    <h2 className={styles.sectionTitle}>Security</h2>
+                </div>
+                <div className={styles.card}>
+                    <form onSubmit={handleSavePassword} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        <div>
+                            <label className="form-label">Current Password</label>
+                            <input className="form-input" type="password" required value={passwords.currentPassword} onChange={e => setPasswords({...passwords, currentPassword: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="form-label">New Password</label>
+                            <input className="form-input" type="password" required value={passwords.newPassword} onChange={e => setPasswords({...passwords, newPassword: e.target.value})} />
+                        </div>
+                        <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>Update Password</button>
+                    </form>
                 </div>
             </div>
 

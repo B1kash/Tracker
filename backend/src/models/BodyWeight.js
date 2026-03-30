@@ -11,6 +11,7 @@ const BodyWeightSchema = new mongoose.Schema({
     chest: { type: Number },    // cm
     waist: { type: Number },    // cm
     hips: { type: Number },     // cm
+    bodyFat: { type: Number },  // % percentage
     arms: { type: Number },     // cm
     thighs: { type: Number },   // cm
     notes: { type: String }

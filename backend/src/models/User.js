@@ -14,6 +14,11 @@ const UserSchema = new mongoose.Schema({
         unique: true,
         sparse: true
     },
+    name: { type: String, trim: true },
+    profilePic: { type: String, default: '' },
+    height: { type: Number }, // in cm
+    targetWeight: { type: Number }, // in kg
+    targetBmi: { type: Number },
     email: {
         type: String,
         unique: true,

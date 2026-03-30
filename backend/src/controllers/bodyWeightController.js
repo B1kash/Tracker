@@ -13,12 +13,12 @@ const getBodyWeightLogs = async (req, res) => {
 // @route POST /api/bodyweight
 const upsertBodyWeight = async (req, res) => {
     try {
-        const { date, weight, chest, waist, hips, arms, thighs, notes } = req.body;
+        const { date, weight, chest, waist, hips, bodyFat, arms, thighs, notes } = req.body;
         if (!date || !weight) return res.status(400).json({ message: 'date and weight required' });
 
         const log = await BodyWeight.findOneAndUpdate(
             { user: req.user.id, date },
-            { user: req.user.id, date, weight, chest, waist, hips, arms, thighs, notes },
+            { user: req.user.id, date, weight, chest, waist, hips, bodyFat, arms, thighs, notes },
             { new: true, upsert: true, setDefaultsOnInsert: true }
         );
         res.status(200).json(log);

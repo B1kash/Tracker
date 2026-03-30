@@ -28,6 +28,9 @@ app.use(cors({
 app.use('/api/gym/photos', express.json({ limit: '10mb' }));
 app.use('/api/gym/photos', express.urlencoded({ extended: false, limit: '10mb' }));
 
+app.use('/api/auth/profile', express.json({ limit: '10mb' }));
+app.use('/api/auth/profile', express.urlencoded({ extended: false, limit: '10mb' }));
+
 // Global Body parser clamped down to prevent JSON-DoS
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: false, limit: '100kb' }));
