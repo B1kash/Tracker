@@ -309,11 +309,11 @@ function DietTab({ dateStr, isFuture, dietTargets, onUpdateTargets }) {
     load();
   };
 
-  const handleAIDietSnap = async () => {
-    if (!dietSnapText.trim()) return;
+  const handleAIDietSnap = async (imageBase64 = null) => {
+    if (!dietSnapText.trim() && !imageBase64) return;
     setAnalyzingDiet(true);
     try {
-      const res = await analyzeDietWithAI(dietSnapText, null, dateStr);
+      const res = await analyzeDietWithAI(dietSnapText, imageBase64, dateStr);
       if (res) {
         setDietSnapText('');
         // Refresh logs immediately so the user sees the new entry
@@ -326,6 +326,36 @@ function DietTab({ dateStr, isFuture, dietTargets, onUpdateTargets }) {
     } finally {
       setAnalyzingDiet(false);
     }
+  };
+
+  const popPhotoOptions = () => {
+    Alert.alert(
+      "Snap Food",
+      "Take a picture or choose from gallery",
+      [
+        { text: "Camera", onPress: () => captureFood(true) },
+        { text: "Gallery", onPress: () => captureFood(false) },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
+  };
+
+  const captureFood = async (useCamera) => {
+    const perm = useCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!perm.granted) {
+      Alert.alert('Permission denied', 'Allow camera/gallery access to snap food.');
+      return;
+    }
+    const result = useCamera
+      ? await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7 })
+      : await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7, mediaTypes: ImagePicker.MediaTypeOptions.Images });
+
+    if (result.canceled || !result.assets?.[0]) return;
+    
+    await handleAIDietSnap(`data:image/jpeg;base64,${result.assets[0].base64}`);
   };
 
   const handleGeneratePlan = async () => {
@@ -408,17 +438,22 @@ function DietTab({ dateStr, isFuture, dietTargets, onUpdateTargets }) {
             <Ionicons name="sparkles" size={16} color="#06b6d4" />
             <Text style={s.aiSnapTitle}>AI Diet Snap</Text>
           </View>
-          <TextInput
-            style={s.aiSnapInput}
-            placeholder="What did you eat? (e.g. 2 Paneer parathas)"
-            placeholderTextColor="#475569"
-            value={dietSnapText}
-            onChangeText={setDietSnapText}
-            multiline
-          />
-          <TouchableOpacity style={s.aiSnapBtn} onPress={handleAIDietSnap} disabled={analyzingDiet}>
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+            <TextInput
+              style={[s.aiSnapInput, { flex: 1, marginBottom: 0 }]}
+              placeholder="What did you eat?"
+              placeholderTextColor="#475569"
+              value={dietSnapText}
+              onChangeText={setDietSnapText}
+              multiline
+            />
+            <TouchableOpacity onPress={popPhotoOptions} style={{ padding: 12, backgroundColor: '#0f172a', borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#1e293b' }} disabled={analyzingDiet}>
+              <Ionicons name="camera" size={24} color="#06b6d4" />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={[s.aiSnapBtn, { opacity: (!dietSnapText && !analyzingDiet) ? 0.7 : 1 }]} onPress={() => handleAIDietSnap()} disabled={analyzingDiet || (!dietSnapText && !analyzingDiet)}>
             {analyzingDiet ? <ActivityIndicator size="small" color="#fff" /> : 
-              <><Ionicons name="flash-outline" size={16} color="#fff" /><Text style={s.aiSnapBtnText}>Analyze Meal</Text></>}
+              <><Ionicons name="flash-outline" size={16} color="#fff" /><Text style={s.aiSnapBtnText}>Analyze Written Meal</Text></>}
           </TouchableOpacity>
         </View>
       )}
