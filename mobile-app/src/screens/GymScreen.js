@@ -10,6 +10,7 @@ import {
   getCardioByDate, addCardioLog, deleteCardioLog,
   getDietByDate, addDietLog, deleteDietLog,
   getGymPhotosByDate, uploadGymPhoto, deleteGymPhoto,
+  addXP, checkAndUpdateStreak, updateDietTargets, generateDietPlanWithAI, analyzeDietWithAI, getMe
 } from '../lib/storage';
 import AICoachModal from '../components/AICoachModal';
 
@@ -99,6 +100,12 @@ function ExercisesTab({ dateStr, isFuture }) {
       if ((ex._id || ex.id) !== exId) return ex;
       return { ...ex, sets: ex.sets.map(s => (s._id || s.id) !== setId ? s : { ...s, [field]: field === 'completed' ? !s.completed : val }) };
     });
+    // XP logic: +15 per set completed, -15 per uncompleted
+    if (field === 'completed') {
+      const ex = workout.exercises.find(e => (e._id || e.id) === exId);
+      const set = ex?.sets.find(s => (s._id || s.id) === setId);
+      if (set) await addXP(set.completed ? -15 : 15);
+    }
     await save(exs);
   };
 
@@ -197,6 +204,8 @@ function CardioTab({ dateStr, isFuture }) {
   const submit = async () => {
     if (!form.type) return;
     await addCardioLog({ date: dateStr, ...form, duration: Number(form.duration) || 0, distance: Number(form.distance) || 0, calories: Number(form.calories) || 0 });
+    await addXP(50); // +50 XP for cardio
+    await checkAndUpdateStreak(dateStr);
     setShowModal(false);
     setForm({ type: 'Running', duration: '', distance: '', calories: '' });
     load();
@@ -269,12 +278,19 @@ function CardioTab({ dateStr, isFuture }) {
   );
 }
 
-// ─── TAB: Diet ───
-function DietTab({ dateStr, isFuture }) {
+function DietTab({ dateStr, isFuture, dietTargets, onUpdateTargets }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showAIArchitect, setShowAIArchitect] = useState(false);
+  const [showTargetModal, setShowTargetModal] = useState(false);
+  const [analyzingDiet, setAnalyzingDiet] = useState(false);
+  const [dietSnapText, setDietSnapText] = useState('');
   const [form, setForm] = useState({ meal: 'Breakfast', food: '', calories: '', protein: '', carbs: '', fats: '' });
+
+  const [aiConfig, setAiConfig] = useState({ age: '25', weight: '70', height: '175', goal: 'Weight Loss', activity: 'Moderately Active', preference: 'Vegetarian' });
+  const [generatingPlan, setGeneratingPlan] = useState(false);
+  const [aiPlan, setAiPlan] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -287,9 +303,51 @@ function DietTab({ dateStr, isFuture }) {
   const submit = async () => {
     if (!form.food) return;
     await addDietLog({ date: dateStr, ...form, calories: Number(form.calories) || 0, protein: Number(form.protein) || 0, carbs: Number(form.carbs) || 0, fats: Number(form.fats) || 0 });
+    await addXP(20); // +20 XP for logging a meal
     setShowModal(false);
     setForm({ meal: 'Breakfast', food: '', calories: '', protein: '', carbs: '', fats: '' });
     load();
+  };
+
+  const handleAIDietSnap = async () => {
+    if (!dietSnapText.trim()) return;
+    setAnalyzingDiet(true);
+    try {
+      const res = await analyzeDietWithAI(dietSnapText, null, dateStr);
+      if (res) {
+        setDietSnapText('');
+        // Refresh logs immediately so the user sees the new entry
+        await load(); 
+        await addXP(20); // Award XP for the AI log too
+        Alert.alert("Success", "AI Oracle has logged your meal!");
+      }
+    } catch (e) {
+      Alert.alert("AI Error", "Failed to analyze diet. Please log manually.");
+    } finally {
+      setAnalyzingDiet(false);
+    }
+  };
+
+  const handleGeneratePlan = async () => {
+    setGeneratingPlan(true);
+    try {
+      const res = await generateDietPlanWithAI(aiConfig);
+      setAiPlan(res);
+    } catch (e) {
+      Alert.alert("AI Error", "Failed to generate diet plan.");
+    } finally {
+      setGeneratingPlan(false);
+    }
+  };
+
+  const applyAITargets = async () => {
+    if (!aiPlan?.targets) return;
+    try {
+      await updateDietTargets(aiPlan.targets);
+      onUpdateTargets(aiPlan.targets);
+      setShowAIArchitect(false);
+      Alert.alert("Success", "Targets applied!");
+    } catch (e) { Alert.alert("Error", "Failed to apply targets."); }
   };
 
   const remove = async (id) => {
@@ -297,25 +355,87 @@ function DietTab({ dateStr, isFuture }) {
     setLogs(l => l.filter(x => (x._id || x.id) !== id));
   };
 
-  const totalCals = logs.reduce((sum, l) => sum + (l.calories || 0), 0);
-  const totalProtein = logs.reduce((sum, l) => sum + (l.protein || 0), 0);
+  const totals = logs.reduce((acc, l) => {
+    acc.calories += (Number(l.calories) || 0);
+    acc.protein += (Number(l.protein) || 0);
+    acc.carbs += (Number(l.carbs) || 0);
+    acc.fats += (Number(l.fats) || 0);
+    return acc;
+  }, { calories: 0, protein: 0, carbs: 0, fats: 0 });
+
+  const targets = dietTargets || { calories: 2000, protein: 120, carbs: 200, fats: 60 };
 
   if (loading) return <View style={s.center}><ActivityIndicator color="#f59e0b" size="large" /></View>;
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      {!isFuture && (
-        <TouchableOpacity style={[s.addBtn, { backgroundColor: '#f59e0b', width: '100%', borderRadius: 14, marginBottom: 16, flexDirection: 'row', justifyContent: 'center', gap: 8 }]} onPress={() => setShowModal(true)}>
-          <Ionicons name="add" size={20} color="#fff" />
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Log Meal</Text>
-        </TouchableOpacity>
-      )}
+      {/* Macro Summary Web-style */}
+      <View style={s.macroContainer}>
+        <View style={s.macroHeader}>
+          <Text style={s.macroTitle}>Macro Progress</Text>
+          <TouchableOpacity onPress={() => setShowTargetModal(true)}>
+            <Ionicons name="settings-outline" size={18} color="#94a3b8" />
+          </TouchableOpacity>
+        </View>
+        <View style={s.macroGrid}>
+          {[
+            { label: 'Calories', val: totals.calories, target: targets.calories, color: '#f59e0b', unit: 'kcal' },
+            { label: 'Protein', val: totals.protein, target: targets.protein, color: '#10b981', unit: 'g' },
+            { label: 'Carbs', val: totals.carbs, target: targets.carbs, color: '#06b6d4', unit: 'g' },
+            { label: 'Fats', val: totals.fats, target: targets.fats, color: '#f43f5e', unit: 'g' },
+          ].map(m => {
+            const pct = Math.min(100, Math.round((m.val / m.target) * 100) || 0);
+            return (
+              <View key={m.label} style={s.macroItem}>
+                <Text style={s.macroLabel}>{m.label}</Text>
+                <View style={s.macroBarBg}>
+                  <View style={[s.macroBarFill, { width: `${pct}%`, backgroundColor: m.color }]} />
+                </View>
+                <Text style={s.macroValues}>
+                  <Text style={{ color: m.color, fontWeight: '700' }}>{Math.round(m.val)}</Text>
+                  <Text style={{ color: '#475569' }}> / {m.target}{m.unit}</Text>
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
 
-      {logs.length > 0 && (
-        <View style={s.summaryCard}>
-          <Text style={s.summaryText}>🔥 <Text style={{ color: '#f59e0b' }}>{totalCals} kcal</Text>  ·  💪 <Text style={{ color: '#10b981' }}>{totalProtein}g protein</Text></Text>
+      {/* AI Diet Snap section */}
+      {!isFuture && (
+        <View style={s.aiSnapSection}>
+          <View style={s.aiSnapHeader}>
+            <Ionicons name="sparkles" size={16} color="#06b6d4" />
+            <Text style={s.aiSnapTitle}>AI Diet Snap</Text>
+          </View>
+          <TextInput
+            style={s.aiSnapInput}
+            placeholder="What did you eat? (e.g. 2 Paneer parathas)"
+            placeholderTextColor="#475569"
+            value={dietSnapText}
+            onChangeText={setDietSnapText}
+            multiline
+          />
+          <TouchableOpacity style={s.aiSnapBtn} onPress={handleAIDietSnap} disabled={analyzingDiet}>
+            {analyzingDiet ? <ActivityIndicator size="small" color="#fff" /> : 
+              <><Ionicons name="flash-outline" size={16} color="#fff" /><Text style={s.aiSnapBtnText}>Analyze Meal</Text></>}
+          </TouchableOpacity>
         </View>
       )}
+
+      {/* Action Buttons Row */}
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+        {!isFuture && (
+          <TouchableOpacity style={[s.addBtn, { backgroundColor: '#f59e0b', flex: 1, height: 48, borderRadius: 12, flexDirection: 'row', gap: 8 }]} onPress={() => setShowModal(true)}>
+            <Ionicons name="add" size={20} color="#fff" />
+            <Text style={{ color: '#fff', fontWeight: '700' }}>Manual Log</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={[s.addBtn, { backgroundColor: '#06b6d4', flex: 1, height: 48, borderRadius: 12, flexDirection: 'row', gap: 8 }]} onPress={() => setShowAIArchitect(true)}>
+          <Ionicons name="restaurant-outline" size={20} color="#fff" />
+          <Text style={{ color: '#fff', fontWeight: '700' }}>AI Architect</Text>
+        </TouchableOpacity>
+      </View>
 
       {logs.length === 0 && <View style={s.empty}><Ionicons name="restaurant-outline" size={48} color="#334155" />
         <Text style={s.emptyText}>No meals logged for this day</Text></View>}
@@ -376,6 +496,113 @@ function DietTab({ dateStr, isFuture }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* AI Architect Modal */}
+      <Modal visible={showAIArchitect} animationType="slide" transparent>
+        <View style={s.modalOverlay}>
+          <View style={[s.modalBox, { maxHeight: '80%' }]}>
+            <View style={s.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="sparkles" size={24} color="#06b6d4" />
+                <Text style={s.modalTitle}>Diet Architect</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowAIArchitect(false)}><Ionicons name="close" size={24} color="#94a3b8" /></TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {!aiPlan ? (
+                <View>
+                  <Text style={s.fieldLabel}>Goal</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                    {['Weight Loss', 'Build Muscle', 'Maintenance'].map(g => (
+                      <TouchableOpacity key={g} style={[s.pill, aiConfig.goal === g && s.pillActive]} onPress={() => setAiConfig({ ...aiConfig, goal: g })}>
+                        <Text style={[s.pillText, aiConfig.goal === g && s.pillTextActive]}>{g}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                  <Text style={s.fieldLabel}>Preference</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+                    {['Vegetarian', 'Non-Vegetarian', 'Vegan'].map(p => (
+                      <TouchableOpacity key={p} style={[s.pill, aiConfig.preference === p && s.pillActive]} onPress={() => setAiConfig({ ...aiConfig, preference: p })}>
+                        <Text style={[s.pillText, aiConfig.preference === p && s.pillTextActive]}>{p}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                  <TouchableOpacity style={[s.addBtn, { width: '100%', backgroundColor: '#06b6d4', height: 50, borderRadius: 14 }]} onPress={handleGeneratePlan} disabled={generatingPlan}>
+                    {generatingPlan ? <ActivityIndicator color="#fff" /> : <Text style={s.fetchBtnText}>Build Indian Diet Plan</Text>}
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View>
+                  <View style={s.planTargets}>
+                    {Object.entries(aiPlan.targets).map(([k, v]) => (
+                      <View key={k} style={s.planTargetItem}>
+                        <Text style={s.planTargetKey}>{k}</Text>
+                        <Text style={s.planTargetVal}>{v}{k === 'calories' ? '' : 'g'}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <View style={{ marginVertical: 20 }}>
+                    {aiPlan.plan.map((m, idx) => (
+                      <View key={idx} style={s.planMealCard}>
+                        <Text style={s.planMealName}>{m.meal}</Text>
+                        <Text style={s.planMealDesc}>{m.recommendation}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <TouchableOpacity style={[s.addBtn, { width: '100%', backgroundColor: '#10b981', height: 50, borderRadius: 14 }]} onPress={applyAITargets}>
+                    <Text style={s.fetchBtnText}>Apply Macro Targets</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={{ marginTop: 15, alignSelf: 'center' }} onPress={() => setAiPlan(null)}>
+                    <Text style={{ color: '#64748b' }}>Configure again</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Target Configuration Modal */}
+      <Modal visible={showTargetModal} animationType="slide" transparent>
+        <View style={s.modalOverlay}>
+          <View style={s.modalBox}>
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>Configure Targets</Text>
+              <TouchableOpacity onPress={() => setShowTargetModal(false)}><Ionicons name="close" size={24} color="#94a3b8" /></TouchableOpacity>
+            </View>
+            <View style={{ gap: 12 }}>
+              <View>
+                <Text style={s.fieldLabel}>Daily Calories</Text>
+                <TextInput style={s.modalInput} keyboardType="numeric" value={String(targets.calories)} 
+                  onChangeText={v => onUpdateTargets({ ...targets, calories: Number(v) })} />
+              </View>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.fieldLabel}>Protein (g)</Text>
+                  <TextInput style={s.modalInput} keyboardType="numeric" value={String(targets.protein)} 
+                    onChangeText={v => onUpdateTargets({ ...targets, protein: Number(v) })} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.fieldLabel}>Carbs (g)</Text>
+                  <TextInput style={s.modalInput} keyboardType="numeric" value={String(targets.carbs)} 
+                    onChangeText={v => onUpdateTargets({ ...targets, carbs: Number(v) })} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.fieldLabel}>Fats (g)</Text>
+                  <TextInput style={s.modalInput} keyboardType="numeric" value={String(targets.fats)} 
+                    onChangeText={v => onUpdateTargets({ ...targets, fats: Number(v) })} />
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity style={[s.addBtn, { width: '100%', marginTop: 20, height: 50, borderRadius: 14 }]} onPress={async () => {
+              await updateDietTargets(targets);
+              setShowTargetModal(false);
+            }}>
+              <Text style={s.fetchBtnText}>Save Targets</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -414,6 +641,8 @@ function PhotosTab({ dateStr, isFuture }) {
     setUploading(true);
     try {
       await uploadGymPhoto(dateStr, `data:image/jpeg;base64,${asset.base64}`, 'image/jpeg');
+      await addXP(50); // +50 XP for gym photo
+      await checkAndUpdateStreak(dateStr);
       load();
     } catch (e) {
       Alert.alert('Upload failed', e.message);
@@ -485,6 +714,13 @@ export default function GymScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('exercises');
   const [showAI, setShowAI] = useState(false);
+  const [dietTargets, setDietTargets] = useState(null);
+
+  useEffect(() => {
+    getMe().then(user => {
+      if (user?.dietTargets) setDietTargets(user.dietTargets);
+    });
+  }, []);
 
   const dateStr = getDateStr(selectedDate);
   const todayStr = getDateStr(new Date());
@@ -512,7 +748,7 @@ export default function GymScreen() {
 
       {activeTab === 'exercises' && <ExercisesTab dateStr={dateStr} isFuture={isFuture} />}
       {activeTab === 'cardio' && <CardioTab dateStr={dateStr} isFuture={isFuture} />}
-      {activeTab === 'diet' && <DietTab dateStr={dateStr} isFuture={isFuture} />}
+      {activeTab === 'diet' && <DietTab dateStr={dateStr} isFuture={isFuture} dietTargets={dietTargets} onUpdateTargets={setDietTargets} />}
       {activeTab === 'photos' && <PhotosTab dateStr={dateStr} isFuture={isFuture} />}
     </View>
   );
@@ -588,4 +824,31 @@ const s = StyleSheet.create({
   photoContainer: { width: '47%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden', position: 'relative' },
   photoImg: { width: '100%', height: '100%' },
   deletePhotoBtn: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 14, padding: 5 },
+
+  // New Diet Sync Styles
+  macroContainer: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  macroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  macroTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  macroGrid: { gap: 10 },
+  macroItem: { },
+  macroLabel: { color: '#94a3b8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', marginBottom: 4 },
+  macroBarBg: { height: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' },
+  macroBarFill: { height: '100%', borderRadius: 3 },
+  macroValues: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4, fontSize: 12 },
+  
+  aiSnapSection: { backgroundColor: 'rgba(6,182,212,0.08)', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(6,182,212,0.2)' },
+  aiSnapHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  aiSnapTitle: { color: '#06b6d4', fontWeight: '700', fontSize: 13, textTransform: 'uppercase' },
+  aiSnapInput: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, marginBottom: 12, textAlignVertical: 'top', height: 80 },
+  aiSnapBtn: { backgroundColor: '#06b6d4', borderRadius: 10, paddingVertical: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  aiSnapBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+
+  fetchBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  planTargets: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 10 },
+  planTargetItem: { backgroundColor: 'rgba(255,255,255,0.03)', padding: 10, borderRadius: 10, minWidth: 70, alignItems: 'center' },
+  planTargetKey: { color: '#64748b', fontSize: 10, textTransform: 'uppercase' },
+  planTargetVal: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  planMealCard: { borderLeftWidth: 3, borderLeftColor: '#06b6d4', backgroundColor: 'rgba(255,255,255,0.02)', padding: 12, marginBottom: 10 },
+  planMealName: { color: '#fff', fontWeight: '700', fontSize: 14, marginBottom: 4 },
+  planMealDesc: { color: '#94a3b8', fontSize: 13, lineHeight: 18 },
 });

@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { login, register, googleLogin, setToken } from '../lib/storage';
 
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
-});
+// Safely load Google Sign-In — not available in plain Expo Go
+let GoogleSignin = null;
+let googleSigninAvailable = false;
+try {
+  const gsModule = require('@react-native-google-signin/google-signin');
+  GoogleSignin = gsModule.GoogleSignin;
+  GoogleSignin.configure({
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+  });
+  googleSigninAvailable = true;
+} catch (e) {
+  console.log('Google Sign-In native module not available in Expo Go - username/password login works fine.');
+}
 
 export default function AuthScreen({ onLoginSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -43,6 +52,14 @@ export default function AuthScreen({ onLoginSuccess }) {
   };
 
   const handleGoogleLogin = async () => {
+    if (!googleSigninAvailable) {
+      Alert.alert(
+        'Google Sign-In Unavailable',
+        'Google Sign-In requires a custom native build and is not available in Expo Go.\n\nPlease use username & password to log in.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
     try {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
@@ -55,8 +72,8 @@ export default function AuthScreen({ onLoginSuccess }) {
         onLoginSuccess();
       }
     } catch (error) {
-      console.error("Google Signin Exception:", error);
-      Alert.alert("Google Login Failed", error.message);
+      console.error('Google Signin Exception:', error);
+      Alert.alert('Google Login Failed', error.message);
     } finally {
       setLoading(false);
     }
@@ -134,13 +151,13 @@ export default function AuthScreen({ onLoginSuccess }) {
         </TouchableOpacity>
 
         <TouchableOpacity 
-            style={[styles.primaryButton, { backgroundColor: '#fff', flexDirection: 'row', gap: 10, marginTop: 15 }, loading && styles.disabledButton]} 
+            style={[styles.googleButton, loading && styles.disabledButton, !googleSigninAvailable && { opacity: 0.4 }]} 
             onPress={handleGoogleLogin} 
             disabled={loading}
         >
             <Ionicons name="logo-google" size={20} color="#000" />
             <Text style={[styles.primaryButtonText, { color: '#000' }]}>
-              Continue with Google
+              {googleSigninAvailable ? 'Continue with Google' : 'Google (native build only)'}
             </Text>
         </TouchableOpacity>
 
@@ -223,6 +240,16 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.7,
+  },
+  googleButton: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 15,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
   },
   primaryButtonText: {
     color: '#ffffff',

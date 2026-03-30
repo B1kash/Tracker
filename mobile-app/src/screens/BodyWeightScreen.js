@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Alert, TextInput, Modal, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getBodyWeightLogs, upsertBodyWeight, deleteBodyWeight } from '../lib/storage';
+import { getBodyWeightLogs, upsertBodyWeight, deleteBodyWeight, getMe } from '../lib/storage';
 
 function getDateStr(d) { return d.toISOString().split('T')[0]; }
 
@@ -12,12 +12,19 @@ export default function BodyWeightScreen() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ date: getDateStr(new Date()), weight: '', chest: '', waist: '', arms: '', notes: '' });
+  const [userProfile, setUserProfile] = useState(null);
+  const [form, setForm] = useState({ date: getDateStr(new Date()), weight: '', bodyFat: '', chest: '', waist: '', arms: '', notes: '' });
 
   const load = async () => {
     setLoading(true);
-    const data = await getBodyWeightLogs();
-    setLogs([...data].reverse()); // newest first
+    try {
+        const [data, profile] = await Promise.all([
+            getBodyWeightLogs(),
+            getMe().catch(() => null)
+        ]);
+        setLogs([...data].reverse()); // newest first
+        setUserProfile(profile);
+    } catch(e) {}
     setLoading(false);
   };
 
@@ -29,13 +36,14 @@ export default function BodyWeightScreen() {
       await upsertBodyWeight({
         date: form.date,
         weight: parseFloat(form.weight),
+        bodyFat: parseFloat(form.bodyFat) || undefined,
         chest: parseFloat(form.chest) || undefined,
         waist: parseFloat(form.waist) || undefined,
         arms: parseFloat(form.arms) || undefined,
         notes: form.notes || undefined,
       });
       setShowModal(false);
-      setForm({ date: getDateStr(new Date()), weight: '', chest: '', waist: '', arms: '', notes: '' });
+      setForm({ date: getDateStr(new Date()), weight: '', bodyFat: '', chest: '', waist: '', arms: '', notes: '' });
       load();
     } catch (e) {
       Alert.alert('Error', e.message);
@@ -55,9 +63,31 @@ export default function BodyWeightScreen() {
   const previous = logs[1];
   const diff = latest && previous ? (parseFloat(latest.weight) - parseFloat(previous.weight)).toFixed(1) : null;
 
+  let goalText = null;
+  if (userProfile?.targetWeight && latest?.weight) {
+      const gdiff = latest.weight - userProfile.targetWeight;
+      if (gdiff > 0) goalText = `📉 You need to lose ${gdiff.toFixed(1)}kg to reach your target weight of ${userProfile.targetWeight}kg.`;
+      else if (gdiff < 0) goalText = `📈 You need to gain ${Math.abs(gdiff).toFixed(1)}kg to reach your target weight of ${userProfile.targetWeight}kg.`;
+      else goalText = `🏁 You have reached your target weight of ${userProfile.targetWeight}kg!`;
+  }
+  
+  let latestBmi = null;
+  if (latest?.weight && userProfile?.height) {
+      const hM = userProfile.height / 100;
+      latestBmi = (latest.weight / (hM * hM)).toFixed(1);
+  }
+
   return (
     <View style={s.container}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        {/* Goal Alert */}
+        {goalText && (
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: 15, borderRadius: 12, marginBottom: 15, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.02)' }}>
+             <View style={{ backgroundColor: '#8b5cf6', padding: 6, borderRadius: 20 }}><Ionicons name="trending-up" size={16} color="white" /></View>
+             <Text style={{ color: '#e2e8f0', fontSize: 13, flex: 1, fontWeight: '500' }}>{goalText}</Text>
+          </View>
+        )}
+
         {/* Stats Header */}
         {latest && (
           <View style={s.statsCard}>
@@ -73,9 +103,13 @@ export default function BodyWeightScreen() {
                 </View>
               )}
             </View>
-            <Text style={s.dateLabel}>Last logged: {latest.date}</Text>
-            {(latest.chest || latest.waist || latest.arms) && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                <Text style={s.dateLabel}>Last logged: {latest.date}</Text>
+                {latestBmi && <Text style={[s.dateLabel, {color: '#ec4899', fontWeight: 'bold'}]}>BMI: {latestBmi}</Text>}
+            </View>
+            {(latest.bodyFat || latest.chest || latest.waist || latest.arms) && (
               <View style={s.measureRow}>
+                {latest.bodyFat ? <View style={s.measureItem}><Text style={[s.measureVal, {color: '#ec4899'}]}>{latest.bodyFat}%</Text><Text style={[s.measureKey, {color: '#ec4899'}]}>Body Fat</Text></View> : null}
                 {latest.chest ? <View style={s.measureItem}><Text style={s.measureVal}>{latest.chest}</Text><Text style={s.measureKey}>Chest</Text></View> : null}
                 {latest.waist ? <View style={s.measureItem}><Text style={s.measureVal}>{latest.waist}</Text><Text style={s.measureKey}>Waist</Text></View> : null}
                 {latest.arms ? <View style={s.measureItem}><Text style={s.measureVal}>{latest.arms}</Text><Text style={s.measureKey}>Arms</Text></View> : null}
@@ -105,9 +139,9 @@ export default function BodyWeightScreen() {
                 <View style={s.logLeft}>
                   <Text style={s.logDate}>{log.date}</Text>
                   {log.notes ? <Text style={s.logNotes}>{log.notes}</Text> : null}
-                  {(log.chest || log.waist || log.arms) ? (
+                  {(log.bodyFat || log.chest || log.waist || log.arms) ? (
                     <Text style={s.logMeasures}>
-                      {[log.chest && `Chest: ${log.chest}`, log.waist && `Waist: ${log.waist}`, log.arms && `Arms: ${log.arms}`].filter(Boolean).join(' · ')}
+                      {[log.bodyFat && `Fat: ${log.bodyFat}%`, log.chest && `Chest: ${log.chest}`, log.waist && `Waist: ${log.waist}`, log.arms && `Arms: ${log.arms}`].filter(Boolean).join(' · ')}
                     </Text>
                   ) : null}
                 </View>
@@ -138,6 +172,10 @@ export default function BodyWeightScreen() {
             <TextInput style={s.input} keyboardType="numeric" value={form.weight} onChangeText={v => setForm(f => ({ ...f, weight: v }))} placeholder="75.5" placeholderTextColor="#475569" />
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.fieldLabel}>Body Fat (%)</Text>
+                <TextInput style={s.input} keyboardType="numeric" value={form.bodyFat} onChangeText={v => setForm(f => ({ ...f, bodyFat: v }))} placeholder="0" placeholderTextColor="#475569" />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.fieldLabel}>Chest (cm)</Text>
                 <TextInput style={s.input} keyboardType="numeric" value={form.chest} onChangeText={v => setForm(f => ({ ...f, chest: v }))} placeholder="0" placeholderTextColor="#475569" />

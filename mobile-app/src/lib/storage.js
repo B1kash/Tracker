@@ -75,11 +75,31 @@ export async function register(username, password) {
 export async function googleLogin(idToken) {
   return apiCall('/auth/google', 'POST', { idToken });
 }
+export async function getMe() {
+  return apiCall('/auth/me');
+}
+export async function updateProfile(data) {
+  return apiCall('/auth/profile', 'PUT', data);
+}
+export async function updatePassword(data) {
+  return apiCall('/auth/password', 'PUT', data);
+}
 
 // ===== GAMIFICATION =====
 export async function getGamificationData() {
   try { return await apiCall('/gamification'); }
   catch { return { xp: 0, level: 1, currentStreak: 0, bestStreak: 0, quests: [] }; }
+}
+export async function addXP(amount) {
+  try { return await apiCall('/gamification/xp', 'POST', { amount }); }
+  catch { return null; }
+}
+export async function checkAndUpdateStreak(dateStr) {
+  try { return await apiCall('/gamification/streak', 'POST', { dateStr }); }
+  catch { return null; }
+}
+export async function updateGamificationSettings(settings) {
+  return apiCall('/gamification/settings', 'PUT', settings);
 }
 
 // ===== HABITS =====
@@ -93,11 +113,19 @@ export async function deleteHabit(id) {
   return apiCall(`/habits/${id}`, 'DELETE');
 }
 export async function getHabitLogByDate(date) {
-  try { return await apiCall(`/habits/log?date=${date}`); }
+  try { return await apiCall(`/habits/logs/${date}`); }
   catch { return { completedHabitIds: [] }; }
 }
 export async function toggleHabitLog(date, habitId) {
-  return apiCall('/habits/toggle', 'POST', { date, habitId });
+  const res = await apiCall('/habits/logs', 'POST', { dateStr: date, habitId });
+  if (res?.newlyCompleted) {
+    await addXP(10); // +10 XP per habit
+  }
+  await checkAndUpdateStreak(date);
+  return res;
+}
+export async function togglePrivacy() {
+  return apiCall('/auth/privacy', 'PUT');
 }
 
 // ===== GYM WORKOUTS =====
@@ -231,6 +259,9 @@ export async function analyzeDietWithAI(text, imageBase64, date) {
 }
 export async function generateWorkoutTemplateWithAI(prompt) {
   return apiCall('/ai/workout-template', 'POST', { prompt });
+}
+export async function generateDailyRoutineWithAI(prompt, date) {
+  return apiCall('/ai/daily-routine', 'POST', { prompt, date });
 }
 export async function generateCurriculumWithAI(topic) {
   return apiCall('/ai/curriculum', 'POST', { topic });
