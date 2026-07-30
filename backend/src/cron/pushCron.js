@@ -21,7 +21,11 @@ cron.schedule('0 * * * *', async () => {
                     await sendPushToUser(settings.user, {
                         title: 'Habit Reminder!',
                         body: 'You have pending habits today. Time to knock them out!',
-                        url: '/habits'
+                        url: '/habits',
+                        actions: [
+                            { action: 'log_habits', title: '✅ Check Habits' },
+                            { action: 'open_gym', title: '💪 Gym Log' }
+                        ]
                     });
                 }
             }
@@ -44,7 +48,11 @@ cron.schedule('0 * * * *', async () => {
                     await sendPushToUser(settings.user, {
                         title: 'Resting hard?',
                         body: "It's been 3 days since your last logged workout. Time to hit the gym!",
-                        url: '/gym'
+                        url: '/gym',
+                        actions: [
+                            { action: 'open_gym', title: '💪 Open Gym' },
+                            { action: 'log_habits', title: '✅ Habits' }
+                        ]
                     });
                 }
             }

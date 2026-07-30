@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     IoAdd, IoTrashOutline, IoCheckmarkSharp, IoAddCircleOutline, IoCloseCircleOutline,
     IoBarbell, IoWalk, IoFastFoodOutline, IoFlameOutline, IoTimerOutline, IoImageOutline, IoCloudUploadOutline,
-    IoListOutline, IoSaveOutline
+    IoListOutline, IoSaveOutline, IoCheckmarkDoneOutline, IoRepeatOutline
 } from 'react-icons/io5';
 import EmptyState from '@/components/EmptyState';
 import {
@@ -50,6 +50,133 @@ function getWeekDates(centerDate) {
     return dates;
 }
 
+function SwipeToLogSet({ completed, onToggle, disabled }) {
+    const [dragX, setDragX] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const trackRef = useRef(null);
+
+    const handleStart = () => {
+        if (disabled) return;
+        setIsDragging(true);
+    };
+
+    const handleMove = (e) => {
+        if (!isDragging || !trackRef.current || disabled) return;
+        const rect = trackRef.current.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const offset = Math.max(0, Math.min(clientX - rect.left - 16, rect.width - 36));
+        setDragX(offset);
+    };
+
+    const handleEnd = () => {
+        if (!isDragging || !trackRef.current || disabled) return;
+        setIsDragging(false);
+        const rect = trackRef.current.getBoundingClientRect();
+        const maxDrag = rect.width - 36;
+        if (dragX > maxDrag * 0.55) {
+            if (typeof window !== 'undefined' && window.navigator?.vibrate) {
+                window.navigator.vibrate(40);
+            }
+            onToggle();
+        }
+        setDragX(0);
+    };
+
+    return (
+        <div 
+            ref={trackRef} 
+            className={`${styles.swipeTrack} ${completed ? styles.swipeTrackDone : ''}`}
+            onMouseDown={handleStart}
+            onMouseMove={handleMove}
+            onMouseUp={handleEnd}
+            onTouchStart={handleStart}
+            onTouchMove={handleMove}
+            onTouchEnd={handleEnd}
+            onClick={() => {
+                if (!isDragging) onToggle();
+            }}
+            style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+        >
+            <div 
+                className={styles.swipeFill} 
+                style={{ width: completed ? '100%' : `${dragX + 18}px`, transition: isDragging ? 'none' : 'width 0.2s ease' }} 
+            />
+            <span className={styles.swipeText}>
+                {completed ? '✓ Logged' : 'Swipe to log →'}
+            </span>
+            <div 
+                className={styles.swipeThumb}
+                style={{ 
+                    left: completed ? 'calc(100% - 34px)' : `${dragX + 2}px`,
+                    transition: isDragging ? 'none' : 'left 0.2s ease',
+                    background: completed ? 'var(--accent-emerald)' : 'white',
+                    color: completed ? 'white' : 'var(--bg-primary)'
+                }}
+            >
+                {completed ? <IoCheckmarkSharp size={16} /> : <IoCheckmarkDoneOutline size={16} />}
+            </div>
+        </div>
+    );
+}
+
+function NumberPickerModal({ pickerState, onClose, onSave }) {
+    if (!pickerState) return null;
+    const isWeight = pickerState.field === 'weight';
+    const presets = isWeight 
+        ? [0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100]
+        : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30];
+
+    const currentVal = pickerState.value === '' || pickerState.value === undefined ? 0 : Number(pickerState.value);
+
+    const updateVal = (newVal) => {
+        const stepVal = Math.max(0, newVal);
+        const formatted = isWeight ? (stepVal % 1 === 0 ? stepVal.toString() : stepVal.toFixed(1)) : Math.round(stepVal);
+        onSave(pickerState.exId, pickerState.setId, pickerState.field, formatted);
+    };
+
+    return (
+        <div className={styles.pickerOverlay} onClick={onClose}>
+            <div className={styles.pickerModal} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.pickerHeader}>
+                    <div className={styles.pickerTitle}>
+                        {isWeight ? '🏋️ Weight Selector' : '🔢 Reps Selector'}
+                    </div>
+                    <button type="button" className="btn-icon" onClick={onClose}><IoCloseCircleOutline size={22} /></button>
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{pickerState.title}</div>
+                
+                <div className={styles.pickerDisplay}>
+                    <button type="button" className={styles.stepperBtn} style={{ width: '42px', height: '42px', fontSize: '1.3rem' }} onClick={() => updateVal(currentVal - (isWeight ? 2.5 : 1))}>-</button>
+                    <div className={styles.pickerValue}>
+                        {pickerState.value !== '' && pickerState.value !== undefined ? pickerState.value : '0'} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>{isWeight ? 'kg' : 'reps'}</span>
+                    </div>
+                    <button type="button" className={styles.stepperBtn} style={{ width: '42px', height: '42px', fontSize: '1.3rem' }} onClick={() => updateVal(currentVal + (isWeight ? 2.5 : 1))}>+</button>
+                </div>
+
+                <div className={styles.pickerGrid}>
+                    {presets.map((val) => {
+                        const isActive = Number(pickerState.value) === val;
+                        return (
+                            <button
+                                type="button"
+                                key={val}
+                                className={`${styles.pickerChip} ${isActive ? styles.pickerChipActive : ''}`}
+                                onClick={() => updateVal(val)}
+                            >
+                                {val} {isWeight && val > 0 ? 'kg' : ''}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <button type="button" className="btn btn-primary" onClick={onClose} style={{ width: '100%', marginTop: '8px' }}>
+                    Done
+                </button>
+            </div>
+        </div>
+    );
+}
+
 export default function GymPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [activeTab, setActiveTab] = useState('exercises');
@@ -85,6 +212,7 @@ export default function GymPage() {
     });
     
     const [timerEnabled, setTimerEnabled] = useState(true);
+    const [pickerState, setPickerState] = useState(null);
 
     const toggleTemplateExpand = (id) => {
         setExpandedTemplates((prev) => {
@@ -123,7 +251,7 @@ export default function GymPage() {
     // Add apiCall for auth me if not already in storage
     async function apiCall(endpoint, method = 'GET', body = null) {
         const token = localStorage.getItem('jwt_token');
-        const res = await fetch(`http://localhost:5000/api${endpoint}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api${endpoint}`, {
             method,
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: body ? JSON.stringify(body) : null
@@ -210,6 +338,19 @@ export default function GymPage() {
         const ex = exercises.find((e) => (e._id || e.id) === exId);
         if (!ex) return;
         const targetSet = ex.sets.find(s => (s._id || s.id) === setId);
+        
+        // Validation: require weight and reps before marking complete
+        if (!targetSet?.completed) {
+            if (targetSet.weight === '' || targetSet.weight === undefined) {
+                alert('Please enter a weight before logging the set. (Enter 0 for bodyweight)');
+                return;
+            }
+            if (!targetSet.reps || targetSet.reps <= 0) {
+                alert('Please enter the number of reps before logging the set.');
+                return;
+            }
+        }
+
         const willBeCompleted = !(targetSet?.completed);
         const newSets = ex.sets.map((s) => (s._id || s.id) === setId ? { ...s, completed: !s.completed } : s);
         setWorkout(prev => ({ ...prev, exercises: prev.exercises.map(e => (e._id || e.id) === exId ? { ...e, sets: newSets } : e) }));
@@ -416,6 +557,28 @@ export default function GymPage() {
         setTemplates(await getWorkoutTemplates());
     };
 
+    const lastPastWorkout = allWorkouts
+        .filter(w => w.date < dateStr && w.exercises && w.exercises.length > 0)
+        .sort((a, b) => b.date.localeCompare(a.date))[0];
+
+    const handleCopyForward = async (pastSession) => {
+        if (isFuture || !pastSession) return;
+        const clonedExercises = pastSession.exercises.map(ex => ({
+            name: ex.name,
+            sets: ex.sets.map(s => ({
+                reps: s.reps || 0,
+                weight: s.weight || '',
+                completed: false,
+                _id: mockObjectId()
+            })),
+            _id: mockObjectId()
+        }));
+
+        setWorkout({ exercises: clonedExercises, date: dateStr });
+        await saveWorkoutForDate(dateStr, clonedExercises);
+        setWorkout(await getWorkoutByDate(dateStr));
+    };
+
     const totalSets = exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
     const completedSets = exercises.reduce((sum, ex) => sum + ex.sets.filter((s) => s.completed).length, 0);
     const totalCardioMins = cardioEntries.reduce((sum, c) => sum + (parseInt(c.duration) || 0), 0);
@@ -494,8 +657,32 @@ export default function GymPage() {
                         <input className="form-input" placeholder="Add exercise (e.g. Bench Press, Squats...)" value={newExercise} onChange={(e) => setNewExercise(e.target.value)} disabled={isFuture} />
                         <button type="submit" className="btn btn-primary btn-sm" disabled={isFuture}><IoAdd size={18} /> Add</button>
                     </form>
+                    {/* Copy-Forward Previous Routine Banner */}
+                    {exercises.length === 0 && lastPastWorkout && (
+                        <div className={styles.copyForwardBanner}>
+                            <div className={styles.copyForwardInfo}>
+                                <span className={styles.copyForwardBadge}>⚡ Copy-Forward Routine</span>
+                                <h4 className={styles.copyForwardTitle}>
+                                    Duplicate session from {new Date(lastPastWorkout.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                </h4>
+                                <p className={styles.copyForwardSub}>
+                                    {lastPastWorkout.exercises.map(e => e.name).join(' · ')}
+                                </p>
+                            </div>
+                            <button 
+                                type="button"
+                                className="btn btn-primary btn-sm" 
+                                onClick={() => handleCopyForward(lastPastWorkout)}
+                                disabled={isFuture}
+                                style={{ whiteSpace: 'nowrap', gap: '6px' }}
+                            >
+                                <IoRepeatOutline size={16} /> Copy Routine & Pre-fill
+                            </button>
+                        </div>
+                    )}
+
                     {exercises.length === 0 ? (
-                        <div className="empty-inline">No exercises logged — type above and hit Add!</div>
+                        <div className="empty-inline">No exercises logged — type above or copy your previous routine!</div>
                     ) : (
                         <div className={styles.exerciseList}>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
@@ -518,32 +705,55 @@ export default function GymPage() {
                                         </div>
                                     </div>
                                     {ex.sets.length > 0 && (
-                                        <table className="sets-table" style={{ width: '100%', maxWidth: '500px' }}>
-                                            <thead>
-                                                <tr>
-                                                    <th style={{ width: '50px' }}>Set</th>
-                                                    <th>Reps</th>
-                                                    <th>Weight (kg)</th>
-                                                    <th style={{ width: '50px', textAlign: 'center' }}>Done</th>
-                                                    <th style={{ width: '40px', textAlign: 'center' }}></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {ex.sets.map((set, idx) => (
-                                                    <tr key={set._id || set.id}>
-                                                        <td><span className={styles.setNumber}>{idx + 1}</span></td>
-                                                        <td style={{ paddingRight: '10px' }}>
-                                                            <input className="set-input" type="number" min="0" placeholder="0" value={set.reps || ''} onChange={(e) => handleSetChange(ex._id || ex.id, set._id || set.id, 'reps', e.target.value)} disabled={isFuture} style={{ width: '100%', padding: '6px 10px' }} />
-                                                        </td>
-                                                        <td style={{ paddingRight: '10px' }}>
-                                                            <input className="set-input" type="number" placeholder="0" value={set.weight || ''} onChange={(e) => handleSetChange(ex._id || ex.id, set._id || set.id, 'weight', e.target.value)} disabled={isFuture} style={{ width: '100%', padding: '6px 10px' }} />
-                                                        </td>
-                                                        <td style={{ textAlign: 'center' }}><button className={`set-check ${set.completed ? 'done' : ''}`} onClick={() => handleToggleSet(ex._id || ex.id, set._id || set.id)} disabled={isFuture}>{set.completed && <IoCheckmarkSharp size={14} />}</button></td>
-                                                        <td style={{ textAlign: 'center' }}><button className="btn-icon" onClick={() => handleRemoveSet(ex._id || ex.id, set._id || set.id)} disabled={isFuture}><IoCloseCircleOutline size={18} /></button></td>
+                                        <div className={styles.tableWrapper}>
+                                            <table className="sets-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th className={styles.thSet}>Set</th>
+                                                        <th className={styles.thReps}>Reps</th>
+                                                        <th className={styles.thWeight}>Weight (kg)</th>
+                                                        <th className={styles.thSwipe}>Swipe to Log</th>
+                                                        <th className={styles.thDelete}></th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    {ex.sets.map((set, idx) => (
+                                                        <tr key={set._id || set.id}>
+                                                            <td><span className={styles.setNumber}>{idx + 1}</span></td>
+                                                            <td>
+                                                                <div className={styles.stepperContainer}>
+                                                                    <button type="button" className={styles.stepperBtn} onClick={() => handleSetChange(ex._id || ex.id, set._id || set.id, 'reps', Math.max(0, (parseInt(set.reps) || 0) - 1))} disabled={isFuture}>-</button>
+                                                                    <button type="button" className={styles.valueBtn} onClick={() => setPickerState({ exId: ex._id || ex.id, setId: set._id || set.id, field: 'reps', value: set.reps, title: `${ex.name} - Set ${idx + 1}` })} disabled={isFuture}>
+                                                                        {set.reps !== '' && set.reps !== undefined ? set.reps : '0'}
+                                                                    </button>
+                                                                    <button type="button" className={styles.stepperBtn} onClick={() => handleSetChange(ex._id || ex.id, set._id || set.id, 'reps', (parseInt(set.reps) || 0) + 1)} disabled={isFuture}>+</button>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div className={styles.stepperContainer}>
+                                                                    <button type="button" className={styles.stepperBtn} onClick={() => handleSetChange(ex._id || ex.id, set._id || set.id, 'weight', Math.max(0, (parseFloat(set.weight) || 0) - 2.5))} disabled={isFuture}>-2.5</button>
+                                                                    <button type="button" className={styles.valueBtn} onClick={() => setPickerState({ exId: ex._id || ex.id, setId: set._id || set.id, field: 'weight', value: set.weight, title: `${ex.name} - Set ${idx + 1}` })} disabled={isFuture}>
+                                                                        {set.weight !== '' && set.weight !== undefined ? `${set.weight} kg` : '0 kg'}
+                                                                    </button>
+                                                                    <button type="button" className={styles.stepperBtn} onClick={() => handleSetChange(ex._id || ex.id, set._id || set.id, 'weight', (parseFloat(set.weight) || 0) + 2.5)} disabled={isFuture}>+2.5</button>
+                                                                    <button type="button" className={styles.stepperBtn} onClick={() => handleSetChange(ex._id || ex.id, set._id || set.id, 'weight', (parseFloat(set.weight) || 0) + 5)} disabled={isFuture}>+5</button>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <SwipeToLogSet 
+                                                                    completed={set.completed} 
+                                                                    onToggle={() => handleToggleSet(ex._id || ex.id, set._id || set.id)}
+                                                                    disabled={isFuture} 
+                                                                />
+                                                            </td>
+                                                            <td style={{ textAlign: 'center' }}>
+                                                                <button type="button" className="btn-icon" onClick={() => handleRemoveSet(ex._id || ex.id, set._id || set.id)} disabled={isFuture}><IoCloseCircleOutline size={18} /></button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     )}
                                 </div>
                             ))}
@@ -1019,6 +1229,12 @@ export default function GymPage() {
                     <img src={selectedImage} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} alt="Enlarged Progress" />
                 </div>
             )}
+            {/* Touch Number Picker Modal */}
+            <NumberPickerModal 
+                pickerState={pickerState} 
+                onClose={() => setPickerState(null)} 
+                onSave={(exId, setId, field, val) => handleSetChange(exId, setId, field, val)} 
+            />
         </div>
     );
 }

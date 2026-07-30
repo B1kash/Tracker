@@ -17,7 +17,7 @@ async function apiCall(endpoint, method = 'GET', body = null) {
         },
     };
     if (body) config.body = JSON.stringify(body);
-    const res = await fetch(`http://localhost:5000/api${endpoint}`, config);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api${endpoint}`, config);
     return res;
 }
 

@@ -3,6 +3,7 @@ import Sidebar from '@/components/Sidebar';
 import { ThemeProvider } from '@/components/ThemeProvider';
 
 import AuthGuard from '@/components/AuthGuard';
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 
 export const metadata = {
   title: 'LifeTracker — Personal Goal Tracker',
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body>
+        <ServiceWorkerRegister />
         <ThemeProvider>
           <AuthGuard>
             <div className="app-layout">

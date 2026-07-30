@@ -19,7 +19,7 @@ app.use(helmet());
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
         ? ['https://yourapp.com', 'trackerapp://', 'exp://'] 
-        : '*',
+        : true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
 }));
