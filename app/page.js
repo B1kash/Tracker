@@ -10,6 +10,7 @@ import MilestoneGoals from '@/components/MilestoneGoals';
 import ProgressCardModal from '@/components/ProgressCard';
 import AICoachModal from '@/components/AICoachModal';
 import { getStats, getRecentActivity } from '@/lib/storage';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 export default function Dashboard() {
@@ -34,7 +35,7 @@ export default function Dashboard() {
     fetchDashboard();
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) return <PageSkeleton type="dashboard" />;
 
   const hasGoals = stats && stats.totalGoals > 0;
 

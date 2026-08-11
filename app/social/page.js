@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { IoGlobeOutline, IoPeopleOutline, IoShieldOutline, IoPersonAddOutline } from 'react-icons/io5';
 import { getLeaderboard, getSquad, addFriend, createSquad, joinSquad } from '@/lib/storage';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 export default function SocialPage() {
@@ -40,6 +41,8 @@ export default function SocialPage() {
     useEffect(() => {
         fetchData();
     }, []);
+
+    if (loading) return <PageSkeleton type="dashboard" />;
 
     const showMsg = (text) => {
         setMsg(text);
@@ -100,10 +103,7 @@ export default function SocialPage() {
                 </button>
             </div>
 
-            {loading ? (
-                <div className={styles.loading}>Loading social data...</div>
-            ) : (
-                <div className={styles.content}>
+            <div className={styles.content}>
                     {activeTab === 'Global' && (
                         <div className="card">
                             <h2 style={{ marginBottom: '20px' }}>Global Leaderboard</h2>
@@ -161,7 +161,6 @@ export default function SocialPage() {
                         </div>
                     )}
                 </div>
-            )}
 
             {modal.show && (
                 <div className={styles.modalOverlay}>

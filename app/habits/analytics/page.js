@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { IoArrowBack, IoTrendingUpOutline, IoFlameOutline, IoCalendarOutline } from 'react-icons/io5';
 import Link from 'next/link';
 import { getHabits, getHabitLogs } from '@/lib/storage';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 export default function HabitAnalyticsPage() {
@@ -20,7 +21,7 @@ export default function HabitAnalyticsPage() {
         loadData();
     }, []);
 
-    if (!mounted) return null;
+    if (!mounted) return <PageSkeleton type="dashboard" />;
 
     // Helper functions for analytics
     const calculateStreak = (habitId) => {

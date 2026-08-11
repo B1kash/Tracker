@@ -12,6 +12,9 @@ connectDB();
 
 const app = express();
 
+// Trust the reverse proxy (Render) so rate limiting can read the real user IP
+app.set('trust proxy', 1);
+
 // Secure HTTP headers
 app.use(helmet());
 

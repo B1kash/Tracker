@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { getCalendarData } from '@/lib/storage';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -42,7 +43,7 @@ export default function CalendarPage() {
         fetchCalendar();
     }, [year, month]);
 
-    if (!mounted) return null;
+    if (!mounted) return <PageSkeleton type="dashboard" />;
 
     const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
     const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));

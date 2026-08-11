@@ -6,6 +6,7 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { getBodyWeightLogs, upsertBodyWeight, deleteBodyWeight, getMe } from '@/lib/storage';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 const MEASUREMENTS = [
@@ -67,7 +68,7 @@ export default function BodyWeightPage() {
         await fetchLogs();
     };
 
-    if (!mounted) return null;
+    if (!mounted) return <PageSkeleton type="dashboard" />;
 
     // Prepare chart data
     const chartData = [...logs].sort((a, b) => a.date.localeCompare(b.date)).map(l => {

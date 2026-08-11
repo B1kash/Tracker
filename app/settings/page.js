@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { IoDownloadOutline, IoPersonOutline, IoShieldCheckmarkOutline, IoTrashOutline, IoNotificationsOutline, IoTimeOutline, IoMoonOutline, IoSunnyOutline, IoColorPaletteOutline, IoLockClosedOutline, IoCameraOutline } from 'react-icons/io5';
 import { useTheme } from '@/components/ThemeProvider';
 import { getPushPublicKey, getPushSettings, updatePushSettings, subscribeToPush, getGamificationData, updateGamificationSettings, getMe, togglePrivacy, updateProfile, updatePassword } from '@/lib/storage';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 async function apiCall(endpoint, method = 'GET', body = null) {
@@ -35,6 +36,7 @@ export default function SettingsPage() {
     const [exporting, setExporting] = useState(false);
     const [msg, setMsg] = useState('');
     const username = typeof window !== 'undefined' ? localStorage.getItem('username') || 'User' : 'User';
+    const [loading, setLoading] = useState(true);
 
     const [pushEnabled, setPushEnabled] = useState(false);
     const [reminderTime, setReminderTime] = useState('08:00');
@@ -57,6 +59,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         async function load() {
+            setLoading(true);
             if ('serviceWorker' in navigator) {
                 const reg = await navigator.serviceWorker.getRegistration();
                 const sub = await reg?.pushManager.getSubscription();
@@ -88,9 +91,12 @@ export default function SettingsPage() {
                 enabled: localStorage.getItem('restTimerEnabled') !== 'false',
                 duration: parseInt(localStorage.getItem('restTimerDuration')) || 90
             });
+            setLoading(false);
         }
         load();
     }, []);
+
+    if (loading) return <PageSkeleton type="list" />;
 
     const showMsg = (text) => {
         setMsg(text);

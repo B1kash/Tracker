@@ -11,6 +11,7 @@ import {
     getLearningGoals, addLearningGoal, updateLearningGoal, deleteLearningGoal,
     addProgressLog, deleteProgressLog, generateCurriculumWithAI
 } from '@/lib/storage';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Completed'];
@@ -57,6 +58,8 @@ export default function LearningPage() {
     }, []);
 
     useEffect(() => { loadGoals(); }, [loadGoals]);
+
+    if (loading) return <PageSkeleton type="list" />;
 
     const toggleExpand = (goalId) => {
         setExpandedGoals((prev) => {
@@ -201,9 +204,7 @@ export default function LearningPage() {
                 </div>
             )}
 
-            {loading ? (
-                <p style={{ color: 'var(--text-muted)', padding: '40px' }}>Loading...</p>
-            ) : goals.length === 0 ? (
+            {goals.length === 0 ? (
                 <EmptyState
                     title="No learning goals yet"
                     message="Add a course, topic, or skill — then log your daily learning!"

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { IoAdd, IoTrashOutline, IoPencilOutline, IoCheckmarkCircle, IoEllipseOutline, IoCalendarOutline } from 'react-icons/io5';
 import EmptyState from '@/components/EmptyState';
 import { getContentLogs, addContentLog, updateContentLog, deleteContentLog } from '@/lib/storage';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 const STATUSES = ['Created', 'Drafted', 'Posted'];
@@ -34,6 +35,8 @@ export default function ContentPage() {
     }, []);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    if (loading) return <PageSkeleton type="list" />;
 
     const openAdd = () => {
         setEditingLog(null);
@@ -108,9 +111,7 @@ export default function ContentPage() {
                 </div>
             )}
 
-            {loading ? (
-                <p style={{ color: 'var(--text-muted)', padding: '40px' }}>Loading...</p>
-            ) : logs.length === 0 ? (
+            {logs.length === 0 ? (
                 <EmptyState title="No content logged yet" message="Start logging your content — track ideas, drafts, and published work!" actionLabel="Log Content" onAction={openAdd} />
             ) : (
                 <div className={styles.dateGroups}>

@@ -7,6 +7,7 @@ import AddGoalModal from '@/components/AddGoalModal';
 import Link from 'next/link';
 import { getHabits, addHabit, deleteHabit, getHabitLogByDate, toggleHabitLog } from '@/lib/storage';
 import { triggerGamificationUpdate } from '@/lib/events';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -50,7 +51,7 @@ export default function HabitsPage() {
         fetchHabits();
     }, [dateStr]);
 
-    if (!mounted) return null;
+    if (!mounted) return <PageSkeleton type="list" />;
 
     const handleToggleHabit = async (habitId) => {
         const updatedLog = await toggleHabitLog(dateStr, habitId);

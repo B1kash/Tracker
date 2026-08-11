@@ -21,6 +21,7 @@ import { IoSettingsOutline, IoSparklesOutline, IoRestaurantOutline, IoChevronDow
 import { compressImage } from './Compressor';
 import OneRMChart from '@/components/OneRMChart';
 import MacroRings from '@/components/MacroRings';
+import PageSkeleton from '@/components/PageSkeleton';
 import styles from './page.module.css';
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -273,7 +274,7 @@ export default function GymPage() {
         setTimerEnabled(localStorage.getItem('restTimerEnabled') !== 'false');
     }, [loadData]);
 
-    if (!mounted) return null;
+    if (!mounted) return <PageSkeleton type="dashboard" />;
 
     const exercises = workout?.exercises || [];
     const datesWithData = new Set(allWorkouts.map((w) => w.date));
