@@ -8,8 +8,8 @@ export default function ProgressRing({ percent = 0, size = 120, strokeWidth = 8,
     const offset = circumference - (percent / 100) * circumference;
 
     return (
-        <div className={styles.wrapper} style={{ width: size, height: size }}>
-            <svg className={styles.svg} width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <div className={styles.wrapper} style={{ width: '100%', maxWidth: size, aspectRatio: '1/1' }}>
+            <svg className={styles.svg} width="100%" height="100%" viewBox={`0 0 ${size} ${size}`}>
                 {/* Background circle */}
                 <circle
                     className={styles.bgCircle}

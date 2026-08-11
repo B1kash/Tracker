@@ -1,6 +1,6 @@
 .wrapper {
     position: relative;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
 }
@@ -44,4 +44,15 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+    .percent {
+        font-size: 1.1rem;
+    }
+    
+    .label {
+        font-size: 0.55rem;
+        margin-top: 1px;
+    }
 }
