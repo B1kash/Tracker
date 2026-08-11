@@ -18,7 +18,7 @@ app.use(helmet());
 // Enable CORS with reasonable defaults for a modern Web+Mobile API
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://yourapp.com', 'http://localhost:3000', 'trackerapp://', 'exp://'] 
+        ? ['https://tracker-steel-theta.vercel.app', 'http://localhost:3000', 'trackerapp://', 'exp://'] 
         : true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
