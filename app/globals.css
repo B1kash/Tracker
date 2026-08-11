@@ -102,6 +102,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -113,6 +114,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background var(--transition-base), color var(--transition-base);
+  overflow-x: hidden;
 }
 
 h1,
@@ -189,6 +191,7 @@ select {
   padding: 32px 40px;
   min-height: 100vh;
   transition: margin-left var(--transition-base);
+  min-width: 0;
 }
 
 /* ===== Card ===== */
@@ -552,6 +555,7 @@ select {
   margin-bottom: 28px;
   overflow-x: auto;
   padding-bottom: 4px;
+  width: 100%;
 }
 
 .date-chip {
@@ -720,58 +724,7 @@ select {
   border-color: var(--accent-purple);
 }
 
-@media (max-width: 768px) {
-  .sets-table, .sets-table tbody {
-    display: block;
-    width: 100%;
-  }
-  .sets-table thead {
-    display: none;
-  }
-  .sets-table tr {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-    background: var(--bg-card);
-    padding: 16px;
-    border-radius: var(--radius-md);
-    margin-bottom: 12px;
-    position: relative;
-    border: 1px solid var(--border-color);
-  }
-  .sets-table td {
-    display: block;
-    padding: 0 !important;
-    border: none;
-  }
-  .sets-table td:nth-child(1) {
-    width: 100%;
-    font-weight: bold;
-    font-size: 0.95rem;
-    margin-bottom: 4px;
-  }
-  .sets-table td:nth-child(1)::after {
-    content: " Set";
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    font-weight: normal;
-    margin-left: 4px;
-  }
-  .sets-table td:nth-child(2), .sets-table td:nth-child(3) {
-    flex: 1;
-    min-width: 40%;
-  }
-  .sets-table td:nth-child(4) {
-    width: 100%;
-    margin-top: 8px;
-  }
-  .sets-table td:nth-child(5) {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-  }
-}
+/* Sets-table mobile handled by page.module.css tableWrapper horizontal scroll */
 
 /* ===== Content Log Card ===== */
 .content-card {
@@ -1018,7 +971,7 @@ select {
   .main-content {
     margin-left: 0;
     padding: 16px 14px;
-    padding-bottom: 80px;
+    padding-bottom: 120px;
     /* Space for bottom nav */
     min-height: 100vh;
   }
@@ -1206,7 +1159,7 @@ select {
 @media (max-width: 400px) {
   .main-content {
     padding: 12px 10px;
-    padding-bottom: 80px;
+    padding-bottom: 120px;
   }
 
   .page-title {

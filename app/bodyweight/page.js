@@ -130,17 +130,17 @@ export default function BodyWeightPage() {
 
             {/* Summary cards */}
             {(goalText || predictionText) && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px' }}>
+                <div className={styles.insightContainer}>
                     {goalText && (
-                        <div style={{ background: 'var(--bg-card)', padding: '15px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <div style={{ background: 'var(--accent-purple)', padding: '8px', borderRadius: '50%' }}><IoTrendingUpOutline size={20} color="white" /></div>
+                        <div className={styles.goalInsightCard}>
+                            <div className={styles.goalIconContainer}><IoTrendingUpOutline size={20} color="white" /></div>
                             <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{goalText}</div>
                         </div>
                     )}
                     {predictionText && (
-                        <div style={{ background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(18, 15, 23, 0.9))', padding: '15px 20px', borderRadius: '12px', border: '1px solid rgba(236, 72, 153, 0.3)', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <div style={{ background: 'rgba(236,72,153,0.3)', padding: '8px', borderRadius: '50%' }}>✨</div>
-                            <div style={{ fontWeight: '600', color: '#ec4899', letterSpacing: '0.3px' }}>AI Insight: {predictionText}</div>
+                        <div className={styles.aiInsightCard}>
+                            <div className={styles.aiIconContainer}>✨</div>
+                            <div className={styles.aiInsightText}>AI Insight: {predictionText}</div>
                         </div>
                     )}
                 </div>
@@ -247,12 +247,12 @@ export default function BodyWeightPage() {
                                 max={getToday()}
                                 onChange={e => setForm({ ...form, date: e.target.value })} />
                         </div>
-                        <div className="form-group" style={{ flex: 1 }}>
+                        <div className={`form-group ${styles.formGroupFlex}`}>
                             <label className="form-label">Weight (kg) *</label>
                             <input type="number" step="0.1" className="form-input" placeholder="e.g. 75.5"
                                 value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} required />
                         </div>
-                        <button type="submit" className="btn btn-primary" disabled={saving} style={{ alignSelf: 'flex-end' }}>
+                        <button type="submit" className={`btn btn-primary ${styles.submitBtn}`} disabled={saving}>
                             <IoAdd size={18} /> {saving ? 'Saving...' : 'Log'}
                         </button>
                     </div>

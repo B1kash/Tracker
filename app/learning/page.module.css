@@ -307,11 +307,77 @@
     gap: 12px;
 }
 
+.aiForm {
+    background: linear-gradient(135deg, var(--bg-card), #1e1526);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--accent-purple);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.aiIcon {
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+}
+
+.aiInput {
+    flex: 1;
+    border: none !important;
+    background: transparent !important;
+}
+
+.aiSubmitBtn {
+    background: var(--accent-purple);
+    color: white;
+    border: none;
+}
+
+.modalGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
     .headerRow {
         flex-direction: column;
         gap: 10px;
+    }
+
+    .headerRow button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .aiForm {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .aiIcon {
+        display: none;
+    }
+
+    .aiInput {
+        width: 100%;
+        background: var(--bg-input) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius-md) !important;
+    }
+
+    .aiSubmitBtn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modalGrid {
+        grid-template-columns: 1fr;
     }
 
     .goalCard {
@@ -320,6 +386,7 @@
 
     .goalHeader {
         flex-direction: column;
+        align-items: stretch;
         gap: 12px;
     }
 
@@ -327,6 +394,12 @@
         flex-direction: row;
         align-items: center;
         gap: 6px;
+        width: 100%;
+    }
+
+    .goalActions button {
+        flex: 1;
+        justify-content: center;
     }
 
     .goalTitle {

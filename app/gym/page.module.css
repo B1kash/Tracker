@@ -359,39 +359,86 @@
     }
 }
 
+/* Form group sizing classes */
+.formGroupFlex {
+    flex: 1;
+}
+
+.formGroupMedium {
+    width: 130px;
+}
+
+.formGroupSmall {
+    width: 100px;
+}
+
+.formGroupTiny {
+    width: 80px;
+}
+
+.formSubmitBtn {
+    align-self: flex-end;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
     .tabs {
         width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        gap: 6px;
+        padding: 4px;
+        margin-bottom: 16px;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
     }
 
     .tab {
-        flex: 1;
+        flex: 0 0 auto;
+        white-space: nowrap;
         justify-content: center;
-        padding: 8px 10px;
-        font-size: 0.78rem;
+        padding: 8px 14px;
+        font-size: 0.82rem;
     }
 
     .quickAdd {
-        flex-direction: column;
+        display: flex;
+        flex-direction: row;
         gap: 8px;
+        margin-bottom: 16px;
     }
 
+    .quickAdd .form-input {
+        flex: 1;
+    }
+
+    .quickAdd button {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    /* === CARDIO & DIET FORMS === */
     .cardioFormRow,
     .dietFormRow {
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
 
-    .cardioFormRow>.form-group,
-    .dietFormRow>.form-group {
+    .formGroupFlex,
+    .formGroupMedium,
+    .formGroupSmall,
+    .formGroupTiny {
         width: 100% !important;
         flex: none !important;
     }
 
-    .cardioFormRow>button,
-    .dietFormRow>button {
+    .formSubmitBtn {
         align-self: stretch !important;
+        width: 100%;
         justify-content: center;
     }
 
@@ -406,6 +453,7 @@
         height: 36px;
     }
 
+    /* === EXERCISES TAB === */
     .setNumber {
         width: 24px;
         height: 24px;
@@ -429,13 +477,298 @@
     .copyForwardSub {
         white-space: normal;
     }
-}
 
-@media (max-width: 400px) {
-    .tab {
-        padding: 6px 6px;
-        font-size: 0.72rem;
+    /* === EXERCISES TABLE === */
+    .tableWrapper {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+    }
+
+    .tableWrapper table, .tableWrapper tbody, .tableWrapper tr, .tableWrapper td {
+        display: block;
+        width: 100%;
+    }
+
+    .tableWrapper thead {
+        display: none;
+    }
+
+    .tableWrapper tr {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas: 
+            "set delete"
+            "reps reps"
+            "weight weight"
+            "swipe swipe";
+        gap: 16px 12px;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        margin-bottom: 14px;
+    }
+
+    .tableWrapper td {
+        padding: 0;
+        border: none;
+    }
+
+    .tableWrapper td:nth-child(1) { 
+        grid-area: set; 
+        display: flex; 
+        align-items: center; 
+        justify-content: flex-start; 
+    }
+    .tableWrapper td:nth-child(1)::before {
+        content: 'SET';
+        font-size: 0.7rem;
+        font-weight: 700;
+        margin-right: 8px;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+    }
+    
+    .tableWrapper td:nth-child(2) { 
+        grid-area: reps; 
+        display: flex; 
+        flex-direction: row; 
+        justify-content: space-between;
+        align-items: center;
+    }
+    .tableWrapper td:nth-child(2)::before {
+        content: 'Reps';
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+    }
+
+    .tableWrapper td:nth-child(3) { 
+        grid-area: weight; 
+        display: flex; 
+        flex-direction: row; 
+        justify-content: space-between;
+        align-items: center;
+    }
+    .tableWrapper td:nth-child(3)::before {
+        content: 'Weight (kg)';
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+    }
+
+    .tableWrapper td:nth-child(4) { grid-area: swipe; margin-top: 4px; }
+    .tableWrapper td:nth-child(5) { 
+        grid-area: delete; 
+        display: flex; 
+        align-items: center; 
+        justify-content: flex-end; 
+    }
+
+    .stepperContainer {
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+
+    .stepperBtn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+
+    .valueBtn {
+        min-width: 48px;
+        padding: 6px 8px;
+        font-size: 0.85rem;
+    }
+
+    .swipeTrack {
+        width: 100%;
+        min-width: 100%;
+        height: 38px;
+    }
+
+    .swipeThumb {
+        width: 34px;
+        height: 34px;
+    }
+
+    .swipeText {
+        font-size: 0.75rem;
+    }
+
+    /* === TEMPLATES TAB === */
+    .aiRoutineForm {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .aiRoutineForm button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .templateGrid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .saveTemplateForm,
+    .aiTemplateForm {
+        padding: 16px;
+    }
+
+    .templateListGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .templateCardHeader {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .templateCardActions {
+        width: auto;
+    }
+
+    .templateCardActions button {
+        padding: 4px 8px;
+        font-size: 0.78rem;
+    }
+
+    .templateCardTag {
+        font-size: 0.75rem;
+        padding: 3px 8px;
+    }
+
+    /* === AI DIET ARCHITECT === */
+    .aiDietArchitectBox {
+        padding: 14px;
+        margin-bottom: 14px;
+    }
+
+    .aiDietForm {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .aiDietPlanBox {
+        padding: 12px;
+    }
+
+    .aiDietTargetsGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .aiDietPlanHeader {
+        margin-bottom: 10px;
+    }
+
+    .aiDietMealRow {
+        padding: 8px;
+    }
+
+    /* === AI MAGIC LOGGER === */
+    .aiLoggerBox {
+        padding: 12px;
+        margin-bottom: 14px;
+    }
+
+    .aiLoggerForm {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .aiLoggerInput {
+        width: 100%;
+    }
+
+    .aiLoggerButtons {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .aiLoggerButtons label,
+    .aiLoggerButtons button {
+        flex: 1;
+        justify-content: center;
+        margin: 0 !important;
+    }
+
+    /* === PHOTOS TAB === */
+    .photoGallery {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .photoDateHeaderWrapper {
+        padding: 12px;
+    }
+
+    .photoDateHeader {
+        font-size: 0.88rem;
+    }
+
+    .photoEmptyState {
+        padding: 30px 16px;
+        font-size: 0.85rem;
+    }
+
+    .photoDateGroup {
+        margin-bottom: 12px;
+    }
+
+    .photosTimeline {
+        gap: 16px;
+    }
+    /* === DIET & CARDIO CARDS === */
+    .dietCard {
+        padding: 12px 14px;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .dietMealBadge {
+        padding: 4px 10px;
+        font-size: 0.68rem;
+    }
+
+    .dietFood {
+        font-size: 0.85rem;
+    }
+
+    .dietMacros {
+        flex-wrap: wrap;
         gap: 4px;
+    }
+
+    .dietSummary {
+        padding: 10px 14px;
+        font-size: 0.82rem;
+    }
+
+    .cardioMeta {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .cardioSummary {
+        padding: 10px 14px;
+        font-size: 0.82rem;
     }
 }
 
@@ -709,4 +1042,476 @@
 .swipeThumb:active {
     cursor: grabbing;
     transform: scale(1.08);
+}
+
+.tableWrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -15px;
+    padding: 0 15px;
+}
+
+.aiRoutineBox {
+    background: linear-gradient(135deg, rgba(88, 32, 135, 0.1), rgba(18, 15, 23, 0.8));
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px dotted var(--accent-purple);
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.aiRoutineHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent-purple);
+    font-weight: bold;
+}
+
+.aiRoutineForm {
+    display: flex;
+    gap: 10px;
+}
+
+.aiRoutineForm input {
+    border: none;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    flex: 1;
+}
+
+.aiRoutineForm button {
+    background: var(--accent-purple);
+    color: white;
+    border: none;
+    white-space: nowrap;
+}
+
+.templateGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.saveTemplateForm {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.2));
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.saveTemplateHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+    font-weight: bold;
+    font-size: 1.05rem;
+}
+
+.saveTemplateIcon {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+}
+
+.saveTemplateForm input {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    font-size: 0.95rem;
+}
+
+.saveTemplateForm button {
+    background: var(--bg-secondary);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px;
+}
+
+.aiTemplateForm {
+    background: linear-gradient(145deg, rgba(139, 92, 246, 0.15), rgba(18, 15, 23, 0.9));
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.aiTemplateGlow {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+    transform: translate(30%, -30%);
+}
+
+.aiTemplateHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #c4b5fd;
+    font-weight: bold;
+    font-size: 1.05rem;
+    position: relative;
+}
+
+.aiTemplateIcon {
+    background: rgba(139, 92, 246, 0.2);
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+}
+
+.aiTemplateForm input {
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    padding: 12px;
+    font-size: 0.95rem;
+    position: relative;
+}
+
+.aiTemplateForm button {
+    background: var(--accent-purple);
+    color: white;
+    border: none;
+    padding: 10px;
+    font-weight: bold;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.templateListGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.templateCard {
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.templateCardAI {
+    border-color: rgba(138, 43, 226, 0.3) !important;
+}
+
+.templateCardHeader {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.templateCardHeaderAI {
+    background: linear-gradient(90deg, rgba(138, 43, 226, 0.1), transparent);
+}
+
+.templateCardTitleBlock {
+    flex: 1;
+}
+
+.templateCardTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.templateCardTitle {
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.templateCardCount {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.templateCardActions {
+    display: flex;
+    gap: 5px;
+}
+
+.templateCardActions button {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+}
+
+.templateCardBody {
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.templateCardTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.templateCardTag {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.templateCardTagName {
+    color: var(--text-primary);
+}
+
+.templateCardTagSets {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.aiDietArchitectBox {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(139, 92, 246, 0.1));
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    border: 1px dotted var(--accent-cyan);
+    position: relative;
+    overflow: hidden;
+}
+
+.aiDietArchitectLogo {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    opacity: 0.1;
+}
+
+.aiDietArchitectHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.aiDietArchitectIcon {
+    background: var(--gradient-primary);
+    padding: 6px;
+    border-radius: 8px;
+    color: white;
+}
+
+.aiDietArchitectTitle {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.aiDietArchitectSub {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.aiDietForm {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.aiDietPlanBox {
+    background: var(--bg-secondary);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.aiDietPlanHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.aiDietPlanTitle {
+    font-weight: bold;
+    color: var(--accent-cyan);
+    margin: 0;
+}
+
+.aiDietTargetsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.aiDietTargetCard {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.aiDietTargetLabel {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.aiDietTargetVal {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.aiDietMeals {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.aiDietMealRow {
+    padding: 10px;
+    border-left: 3px solid var(--accent-purple);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.aiDietMealName {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.aiDietMealRec {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.aiLoggerBox {
+    background: linear-gradient(145deg, var(--bg-secondary), #2a1538);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--accent-purple);
+}
+
+.aiLoggerTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    font-weight: bold;
+}
+
+.aiLoggerForm {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.aiLoggerInput {
+    flex: 1;
+    border: none;
+    background: var(--bg-card);
+}
+
+.aiLoggerPhotoBtn {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 0 12px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.aiLoggerSubmitBtn {
+    background: var(--accent-purple);
+    color: white;
+}
+
+.restTimerToggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    padding: 6px 12px;
+    borderRadius: 20px;
+    border: 1px solid var(--border-color);
+}
+
+@media (max-width: 400px) {
+    .tab {
+        padding: 6px 6px;
+        font-size: 0.72rem;
+        gap: 4px;
+    }
+
+    .formGroupSmall,
+    .formGroupTiny,
+    .formGroupMedium {
+        width: 100% !important;
+    }
+
+    .stepperBtn {
+        width: 22px;
+        height: 22px;
+        font-size: 0.6rem;
+    }
+
+    .valueBtn {
+        min-width: 36px;
+        font-size: 0.72rem;
+    }
+
+    .swipeTrack {
+        min-width: 80px;
+    }
+
+    .photoGallery {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        padding: 6px;
+    }
+
+    .aiDietForm {
+        grid-template-columns: 1fr;
+    }
+
+    .aiDietTargetsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .templateCardTag {
+        font-size: 0.7rem;
+    }
 }

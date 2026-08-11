@@ -309,13 +309,13 @@ export default function SettingsPage() {
                 </div>
                 <div className={styles.card}>
                     <div className={styles.profileRow}>
-                        <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
+                        <label className={styles.avatarContainer}>
                             {profilePicPreview ? (
-                                <img src={profilePicPreview} alt="Avatar" className={styles.avatar} style={{ objectFit: 'cover' }} />
+                                <img src={profilePicPreview} alt="Avatar" className={`${styles.avatar} ${styles.avatarImage}`} />
                             ) : (
                                 <div className={styles.avatar}>{username[0]?.toUpperCase()}</div>
                             )}
-                            <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'var(--accent-purple)', borderRadius: '50%', padding: '4px', display: 'flex' }}>
+                            <div className={styles.cameraIcon}>
                                 <IoCameraOutline size={14} color="white" />
                             </div>
                             <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
@@ -324,22 +324,22 @@ export default function SettingsPage() {
                             <div className={styles.profileName}>{username}</div>
                             <div className={styles.profileSub}>Life Tracker Member</div>
                         </div>
-                        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div className={styles.privacyContainer}>
                             <button className="btn btn-secondary btn-sm" onClick={handleTogglePrivacy}>
                                 {isPrivate ? <><IoLockClosedOutline/> Publicize Profile</> : <><IoShieldCheckmarkOutline/> Make Profile Private</>}
                             </button>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '5px' }}>
+                            <span className={styles.privacyLabel}>
                                 {isPrivate ? 'Hidden from Leaderboards' : 'Visible on Leaderboards'}
                             </span>
                         </div>
                     </div>
 
-                    <form onSubmit={handleSaveProfile} style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <form onSubmit={handleSaveProfile} className={styles.profileForm}>
                         <div>
                             <label className="form-label">Display Name</label>
                             <input className="form-input" placeholder="How should we call you?" value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                        <div className={styles.formGrid}>
                             <div>
                                 <label className="form-label">Height (cm)</label>
                                 <input className="form-input" type="number" placeholder="e.g. 180" value={profile.height} onChange={e => setProfile({...profile, height: e.target.value})} />
@@ -349,7 +349,7 @@ export default function SettingsPage() {
                                 <input className="form-input" type="number" placeholder="e.g. 75" value={profile.targetWeight} onChange={e => setProfile({...profile, targetWeight: e.target.value})} />
                             </div>
                         </div>
-                        <button type="submit" className="btn btn-primary">Save Profile Info</button>
+                        <button type="submit" className={`btn btn-primary ${styles.submitBtn}`}>Save Profile Info</button>
                     </form>
                 </div>
             </div>
@@ -361,7 +361,7 @@ export default function SettingsPage() {
                     <h2 className={styles.sectionTitle}>Security</h2>
                 </div>
                 <div className={styles.card}>
-                    <form onSubmit={handleSavePassword} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <form onSubmit={handleSavePassword} className={styles.securityForm}>
                         <div>
                             <label className="form-label">Current Password</label>
                             <input className="form-input" type="password" required value={passwords.currentPassword} onChange={e => setPasswords({...passwords, currentPassword: e.target.value})} />
@@ -370,7 +370,7 @@ export default function SettingsPage() {
                             <label className="form-label">New Password</label>
                             <input className="form-input" type="password" required value={passwords.newPassword} onChange={e => setPasswords({...passwords, newPassword: e.target.value})} />
                         </div>
-                        <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>Update Password</button>
+                        <button type="submit" className={`btn btn-primary ${styles.submitBtn}`}>Update Password</button>
                     </form>
                 </div>
             </div>
@@ -404,23 +404,22 @@ export default function SettingsPage() {
                 <div className={styles.card}>
                     <p className={styles.description}>Customize how many days you plan to train per week. Your streak won't break on your targeted rest days!</p>
                     <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className={styles.settingGroupTitle}>
                              Weekly Training Goal
                         </div>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <div className={styles.trainGoalRow}>
                             <select 
-                                className="form-input" 
+                                className="form-input trainSelect" 
                                 value={weeklyTrainDays} 
                                 onChange={(e) => setWeeklyTrainDays(e.target.value)} 
-                                style={{ maxWidth: '150px' }}
                             >
                                 {[1, 2, 3, 4, 5, 6, 7].map(num => (
                                     <option key={num} value={num}>{num} {num === 1 ? 'Day' : 'Days'} / Week</option>
                                 ))}
                             </select>
-                            <button className="btn btn-primary btn-sm" onClick={handleSaveTrainDays}>Save Goal</button>
+                            <button className={`btn btn-primary btn-sm ${styles.trainSaveBtn}`} onClick={handleSaveTrainDays}>Save Goal</button>
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                        <div className={styles.trainHelpText}>
                             Based on this, you safely get {7 - Number(weeklyTrainDays)} rest {7 - Number(weeklyTrainDays) === 1 ? 'day' : 'days'} per week where skipping the gym won't break your streak!
                         </div>
                     </div>
@@ -443,12 +442,12 @@ export default function SettingsPage() {
                 </div>
 
                 {timerSettings.enabled && (
-                    <div className={styles.settingRow}>
+                    <div className={`${styles.settingRow} ${styles.settingRowSelect}`}>
                         <div className={styles.settingInfo}>
                             <div className={styles.settingName}>Default Rest Duration</div>
                             <div className={styles.settingDesc}>How long you want to rest between sets</div>
                         </div>
-                        <select className="form-select" style={{ width: '150px' }} value={timerSettings.duration} onChange={(e) => handleTimerChange('duration', parseInt(e.target.value))}>
+                        <select className={`form-select ${styles.settingSelect}`} value={timerSettings.duration} onChange={(e) => handleTimerChange('duration', parseInt(e.target.value))}>
                             <option value={30}>30 Seconds</option>
                             <option value={60}>60 Seconds</option>
                             <option value={90}>90 Seconds</option>
@@ -468,10 +467,10 @@ export default function SettingsPage() {
                 </div>
                 <div className={styles.card}>
                     <p className={styles.description}>Customize the look and feel of your app tracker.</p>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '15px', background: 'var(--bg-input)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className={styles.themeContainer}>
+                        <div className={styles.themeIconText}>
                             {theme === 'dark' ? <IoMoonOutline size={20} style={{ color: 'var(--accent-purple)' }} /> : <IoSunnyOutline size={20} style={{ color: 'var(--accent-amber)' }} />}
-                            <span style={{ fontWeight: 600 }}>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+                            <span className={styles.themeLabel}>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
                         </div>
                         <button className="btn btn-secondary btn-sm" onClick={toggleTheme}>
                             Switch Theme
@@ -489,10 +488,10 @@ export default function SettingsPage() {
                 <div className={styles.card}>
                     <p className={styles.description}>Stay on track with daily habit reminders and gym alerts.</p>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid var(--border-color)' }}>
+                    <div className={styles.notificationRow}>
                         <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Push Notifications</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{pushEnabled ? 'Enabled on this device' : 'Disabled on this device'}</div>
+                            <div className={styles.notificationLabel}>Push Notifications</div>
+                            <div className={styles.notificationSub}>{pushEnabled ? 'Enabled on this device' : 'Disabled on this device'}</div>
                         </div>
                         <button className="btn btn-secondary btn-sm" onClick={handleEnablePush} disabled={pushEnabled}>
                             {pushEnabled ? 'Enabled' : 'Enable'}
@@ -500,20 +499,19 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className={styles.habitReminderLabel}>
                             <IoTimeOutline size={16} /> Daily Habit Reminder
                         </div>
-                        <div style={{ display: 'flex', gap: '10px' }}>
+                        <div className={styles.habitReminderRow}>
                             <input 
                                 type="time" 
-                                className="form-input" 
+                                className={`form-input ${styles.habitTimeInput}`} 
                                 value={reminderTime} 
                                 onChange={(e) => setReminderTime(e.target.value)} 
-                                style={{ maxWidth: '150px' }}
                             />
-                            <button className="btn btn-primary btn-sm" onClick={handleSaveReminderTime}>Save Time</button>
+                            <button className={`btn btn-primary btn-sm ${styles.habitSaveBtn}`} onClick={handleSaveReminderTime}>Save Time</button>
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                        <div className={styles.habitHelpText}>
                             You will receive a notification at this time if you have uncompleted habits.
                         </div>
                     </div>

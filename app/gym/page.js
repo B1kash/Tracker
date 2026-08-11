@@ -120,17 +120,26 @@ function SwipeToLogSet({ completed, onToggle, disabled }) {
 }
 
 function NumberPickerModal({ pickerState, onClose, onSave }) {
+    const [localValue, setLocalValue] = useState(0);
+
+    useEffect(() => {
+        if (pickerState) {
+            setLocalValue(pickerState.value === '' || pickerState.value === undefined ? 0 : Number(pickerState.value));
+        }
+    }, [pickerState]);
+
     if (!pickerState) return null;
     const isWeight = pickerState.field === 'weight';
     const presets = isWeight 
-        ? [0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100]
+        ? [0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
         : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30];
 
-    const currentVal = pickerState.value === '' || pickerState.value === undefined ? 0 : Number(pickerState.value);
+    const currentVal = localValue;
 
     const updateVal = (newVal) => {
         const stepVal = Math.max(0, newVal);
         const formatted = isWeight ? (stepVal % 1 === 0 ? stepVal.toString() : stepVal.toFixed(1)) : Math.round(stepVal);
+        setLocalValue(stepVal);
         onSave(pickerState.exId, pickerState.setId, pickerState.field, formatted);
     };
 
@@ -148,14 +157,14 @@ function NumberPickerModal({ pickerState, onClose, onSave }) {
                 <div className={styles.pickerDisplay}>
                     <button type="button" className={styles.stepperBtn} style={{ width: '42px', height: '42px', fontSize: '1.3rem' }} onClick={() => updateVal(currentVal - (isWeight ? 2.5 : 1))}>-</button>
                     <div className={styles.pickerValue}>
-                        {pickerState.value !== '' && pickerState.value !== undefined ? pickerState.value : '0'} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>{isWeight ? 'kg' : 'reps'}</span>
+                        {currentVal} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>{isWeight ? 'kg' : 'reps'}</span>
                     </div>
                     <button type="button" className={styles.stepperBtn} style={{ width: '42px', height: '42px', fontSize: '1.3rem' }} onClick={() => updateVal(currentVal + (isWeight ? 2.5 : 1))}>+</button>
                 </div>
 
                 <div className={styles.pickerGrid}>
                     {presets.map((val) => {
-                        const isActive = Number(pickerState.value) === val;
+                        const isActive = localValue === val;
                         return (
                             <button
                                 type="button"
@@ -641,13 +650,13 @@ export default function GymPage() {
                     <OneRMChart allWorkouts={allWorkouts} />
                     
                     {/* AI Daily Routine Generator */}
-                    <div style={{ background: 'linear-gradient(135deg, rgba(88,32,135,0.1), rgba(18,15,23,0.8))', padding: '15px', borderRadius: '12px', border: '1px dotted var(--accent-purple)', marginBottom: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-purple)', fontWeight: 'bold' }}>
+                    <div className={styles.aiRoutineBox}>
+                        <div className={styles.aiRoutineHeader}>
                             ✨ Auto-Build Today's Routine
                         </div>
-                        <form onSubmit={handleGenerateDailyRoutine} style={{ display: 'flex', gap: '10px' }}>
-                            <input className="form-input" placeholder="e.g. 'I only have 30 mins and dumbbells'" value={aiRoutinePrompt} onChange={(e) => setAiRoutinePrompt(e.target.value)} disabled={generatingRoutine || isFuture} required style={{ border: 'none', background: 'rgba(0,0,0,0.3)', color: 'white', flex: 1 }} />
-                            <button type="submit" className="btn btn-sm" disabled={generatingRoutine || isFuture} style={{ background: 'var(--accent-purple)', color: 'white', border: 'none', whiteSpace: 'nowrap' }}>
+                        <form onSubmit={handleGenerateDailyRoutine} className={styles.aiRoutineForm}>
+                            <input className="form-input" placeholder="e.g. 'I only have 30 mins and dumbbells'" value={aiRoutinePrompt} onChange={(e) => setAiRoutinePrompt(e.target.value)} disabled={generatingRoutine || isFuture} required />
+                            <button type="submit" className="btn btn-sm" disabled={generatingRoutine || isFuture}>
                                 {generatingRoutine ? 'Thinking...' : 'Generate Plan'}
                             </button>
                         </form>
@@ -686,7 +695,7 @@ export default function GymPage() {
                     ) : (
                         <div className={styles.exerciseList}>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                                <label className={styles.restTimerToggle}>
                                     <input type="checkbox" checked={timerEnabled} onChange={(e) => {
                                         const val = e.target.checked;
                                         setTimerEnabled(val);
@@ -768,44 +777,29 @@ export default function GymPage() {
                     <h3 className={styles.sectionTitle}>Workout Templates</h3>
                     <p className={styles.sectionSubtitle}>Load a saved routine, or save today's workout as a new template.</p>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                    <div className={styles.templateGrid}>
                         {/* Save Current Workout */}
-                        <form onSubmit={handleSaveTemplate} style={{ 
-                            background: 'linear-gradient(145deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2))', 
-                            padding: '20px', 
-                            borderRadius: '16px', 
-                            border: '1px solid rgba(255,255,255,0.08)', 
-                            display: 'flex', flexDirection: 'column', gap: '15px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '1.05rem' }}>
-                                <div style={{ background: 'rgba(255,255,255,0.1)', padding: '6px', borderRadius: '8px', display: 'flex' }}><IoSaveOutline size={18} /></div>
+                        <form onSubmit={handleSaveTemplate} className={styles.saveTemplateForm}>
+                            <div className={styles.saveTemplateHeader}>
+                                <div className={styles.saveTemplateIcon}><IoSaveOutline size={18} /></div>
                                 Save Current Workout
                             </div>
-                            <input className="form-input" placeholder="e.g. Push Day A" value={templateName} onChange={(e) => setTemplateName(e.target.value)} disabled={exercises.length === 0} required style={{ border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', padding: '12px', fontSize: '0.95rem' }} />
-                            <button type="submit" className="btn btn-sm" disabled={exercises.length === 0} style={{ background: 'var(--bg-secondary)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '10px' }}>
+                            <input className="form-input" placeholder="e.g. Push Day A" value={templateName} onChange={(e) => setTemplateName(e.target.value)} disabled={exercises.length === 0} required />
+                            <button type="submit" className="btn btn-sm" disabled={exercises.length === 0}>
                                 Save Layout
                             </button>
                         </form>
 
                         {/* AI Auto-Generator */}
-                        <form onSubmit={handleGenerateTemplate} style={{ 
-                            background: 'linear-gradient(145deg, rgba(139,92,246,0.15), rgba(18,15,23,0.9))', 
-                            padding: '20px', 
-                            borderRadius: '16px', 
-                            border: '1px solid rgba(139,92,246,0.4)', 
-                            display: 'flex', flexDirection: 'column', gap: '15px',
-                            boxShadow: '0 8px 30px rgba(139,92,246,0.15)',
-                            position: 'relative', overflow: 'hidden'
-                        }}>
-                            <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)', transform: 'translate(30%, -30%)' }}></div>
+                        <form onSubmit={handleGenerateTemplate} className={styles.aiTemplateForm}>
+                            <div className={styles.aiTemplateGlow}></div>
                             
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c4b5fd', fontWeight: 'bold', fontSize: '1.05rem', position: 'relative' }}>
-                                <div style={{ background: 'rgba(139,92,246,0.2)', padding: '6px', borderRadius: '8px', display: 'flex' }}><IoSparklesOutline size={18} /></div>
+                            <div className={styles.aiTemplateHeader}>
+                                <div className={styles.aiTemplateIcon}><IoSparklesOutline size={18} /></div>
                                 AI Auto-Generator
                             </div>
-                            <input className="form-input" placeholder="e.g. '4-day upper body split'" value={aiTemplatePrompt} onChange={(e) => setAiTemplatePrompt(e.target.value)} disabled={generatingTemplate} required style={{ border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(0,0,0,0.3)', color: 'white', padding: '12px', fontSize: '0.95rem', position: 'relative' }} />
-                            <button type="submit" className="btn btn-sm" disabled={generatingTemplate} style={{ background: 'var(--accent-purple)', color: 'white', border: 'none', padding: '10px', fontWeight: 'bold', position: 'relative', boxShadow: '0 4px 15px rgba(139,92,246,0.4)' }}>
+                            <input className="form-input" placeholder="e.g. '4-day upper body split'" value={aiTemplatePrompt} onChange={(e) => setAiTemplatePrompt(e.target.value)} disabled={generatingTemplate} required />
+                            <button type="submit" className="btn btn-sm" disabled={generatingTemplate}>
                                 {generatingTemplate ? 'Thinking...' : 'Generate New Routine'}
                             </button>
                         </form>
@@ -814,7 +808,7 @@ export default function GymPage() {
                     {templates.length === 0 ? (
                         <div className="empty-inline">No templates saved yet. Create your workout then save it here!</div>
                     ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px' }}>
+                        <div className={styles.templateListGrid}>
                             {templates.map((tpl) => {
                                 const isAI = tpl.name.includes('(AI Generated)');
                                 const cleanName = tpl.name.replace('(AI Generated)', '').trim();
@@ -824,22 +818,22 @@ export default function GymPage() {
                                 const extraCount = !isExpanded && tpl.exercises.length > maxShows ? tpl.exercises.length - maxShows : 0;
 
                                 return (
-                                    <div key={tpl._id} style={{ background: 'var(--bg-card)', borderRadius: '12px', border: isAI ? '1px solid rgba(138,43,226,0.3)' : '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                                        <div style={{ padding: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', background: isAI ? 'linear-gradient(90deg, rgba(138,43,226,0.1), transparent)' : 'transparent' }}>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                                    <div key={tpl._id} className={`${styles.templateCard} ${isAI ? styles.templateCardAI : ''}`}>
+                                        <div className={`${styles.templateCardHeader} ${isAI ? styles.templateCardHeaderAI : ''}`}>
+                                            <div className={styles.templateCardTitleBlock}>
+                                                <div className={styles.templateCardTitleRow}>
                                                     {isAI ? <span style={{ fontSize: '1.1rem' }}>✨</span> : <IoListOutline size={18} style={{ color: 'var(--accent-cyan)' }} />}
-                                                    <span style={{ fontWeight: '600', color: 'var(--text-primary)', lineHeight: '1.2' }}>{cleanName}</span>
+                                                    <span className={styles.templateCardTitle}>{cleanName}</span>
                                                 </div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tpl.exercises.length} Exercises</div>
+                                                <div className={styles.templateCardCount}>{tpl.exercises.length} Exercises</div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '5px' }}>
-                                                <button className="btn btn-secondary btn-sm" onClick={() => handleApplyTemplate(tpl)} disabled={isFuture} style={{ padding: '4px 10px', fontSize: '0.8rem' }}>Apply</button>
-                                                <button type="button" className="btn-icon" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteTemplate(tpl._id || tpl.id); }} style={{ padding: '4px' }}><IoTrashOutline size={16} /></button>
+                                            <div className={styles.templateCardActions}>
+                                                <button className="btn btn-secondary btn-sm" onClick={() => handleApplyTemplate(tpl)} disabled={isFuture}>Apply</button>
+                                                <button type="button" className="btn-icon" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteTemplate(tpl._id || tpl.id); }}><IoTrashOutline size={16} /></button>
                                             </div>
                                         </div>
-                                        <div style={{ padding: '12px 15px', background: 'rgba(0,0,0,0.1)' }}>
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                        <div className={styles.templateCardBody}>
+                                            <div className={styles.templateCardTags}>
                                                 {displayExs.map((e, idx) => {
                                                     let setStr = '';
                                                     if (e.sets && e.sets.length > 0) {
@@ -853,9 +847,9 @@ export default function GymPage() {
                                                         setStr = `${e.defaultSets}×${e.defaultReps}`;
                                                     }
                                                     return (
-                                                        <div key={idx} style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-                                                            <span style={{ color: 'var(--text-primary)' }}>{e.name}</span>
-                                                            {setStr && <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}> {setStr}</span>}
+                                                        <div key={idx} className={styles.templateCardTag}>
+                                                            <span className={styles.templateCardTagName}>{e.name}</span>
+                                                            {setStr && <span className={styles.templateCardTagSets}> {setStr}</span>}
                                                         </div>
                                                     );
                                                 })}
@@ -884,25 +878,25 @@ export default function GymPage() {
                 <>
                     <form onSubmit={handleAddCardio} className={styles.cardioForm}>
                         <div className={styles.cardioFormRow}>
-                            <div className="form-group" style={{ flex: 1 }}>
+                            <div className={`form-group ${styles.formGroupFlex}`}>
                                 <label className="form-label">Type</label>
                                 <select className="form-select" value={cardioForm.type} onChange={(e) => setCardioForm({ ...cardioForm, type: e.target.value })}>
                                     {CARDIO_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
-                            <div className="form-group" style={{ width: '100px' }}>
+                            <div className={`form-group ${styles.formGroupSmall}`}>
                                 <label className="form-label">Duration</label>
                                 <input className="form-input" placeholder="30 min" value={cardioForm.duration} onChange={(e) => setCardioForm({ ...cardioForm, duration: e.target.value })} />
                             </div>
-                            <div className="form-group" style={{ width: '100px' }}>
+                            <div className={`form-group ${styles.formGroupSmall}`}>
                                 <label className="form-label">Distance</label>
                                 <input className="form-input" placeholder="5 km" value={cardioForm.distance} onChange={(e) => setCardioForm({ ...cardioForm, distance: e.target.value })} />
                             </div>
-                            <div className="form-group" style={{ width: '100px' }}>
+                            <div className={`form-group ${styles.formGroupSmall}`}>
                                 <label className="form-label">Calories</label>
                                 <input className="form-input" placeholder="300" value={cardioForm.calories} onChange={(e) => setCardioForm({ ...cardioForm, calories: e.target.value })} />
                             </div>
-                            <button type="submit" className="btn btn-primary btn-sm" style={{ alignSelf: 'flex-end' }}>
+                            <button type="submit" className={`btn btn-primary btn-sm ${styles.formSubmitBtn}`}>
                                 <IoAdd size={18} /> Log
                             </button>
                         </div>
@@ -951,22 +945,22 @@ export default function GymPage() {
                     </div>
 
                     {/* AI Diet Architect Section */}
-                    <div style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.1), rgba(139,92,246,0.1))', padding: '20px', borderRadius: '16px', marginBottom: '20px', border: '1px dotted var(--accent-cyan)', position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', top: '-10px', right: '-10px', opacity: 0.1 }}>
+                    <div className={styles.aiDietArchitectBox}>
+                        <div className={styles.aiDietArchitectLogo}>
                             <IoRestaurantOutline size={100} />
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
-                            <div style={{ background: 'var(--gradient-primary)', padding: '6px', borderRadius: '8px', color: 'white' }}>
+                        <div className={styles.aiDietArchitectHeader}>
+                            <div className={styles.aiDietArchitectIcon}>
                                 <IoSparklesOutline size={20} />
                             </div>
                             <div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>AI Diet Architect</h3>
-                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>Generate personalized Indian meal plans and macro targets</p>
+                                <h3 className={styles.aiDietArchitectTitle}>AI Diet Architect</h3>
+                                <p className={styles.aiDietArchitectSub}>Generate personalized Indian meal plans and macro targets</p>
                             </div>
                         </div>
 
                         {!showDietPlan ? (
-                            <form onSubmit={handleGenerateDietPlan} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                            <form onSubmit={handleGenerateDietPlan} className={styles.aiDietForm}>
                                 <div className="form-group">
                                     <label className="form-label">Age</label>
                                     <input type="number" className="form-input" value={aiDietConfig.age} onChange={(e) => setAiDietConfig({...aiDietConfig, age: e.target.value})} />
@@ -1011,30 +1005,30 @@ export default function GymPage() {
                                 </button>
                             </form>
                         ) : (
-                            <div style={{ background: 'var(--bg-secondary)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                                    <h4 style={{ fontWeight: 'bold', color: 'var(--accent-cyan)' }}>Your Personalized Plan</h4>
+                            <div className={styles.aiDietPlanBox}>
+                                <div className={styles.aiDietPlanHeader}>
+                                    <h4 className={styles.aiDietPlanTitle}>Your Personalized Plan</h4>
                                     <button onClick={() => setShowDietPlan(false)} className="btn-icon"><IoCloseCircleOutline size={20} /></button>
                                 </div>
                                 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '20px', textAlign: 'center' }}>
+                                <div className={styles.aiDietTargetsGrid}>
                                     {Object.entries(aiDietPlan.targets).map(([k, v]) => (
-                                        <div key={k} style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px' }}>
-                                            <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{k}</div>
-                                            <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{v}{k === 'calories' ? '' : 'g'}</div>
+                                        <div key={k} className={styles.aiDietTargetCard}>
+                                            <div className={styles.aiDietTargetLabel}>{k}</div>
+                                            <div className={styles.aiDietTargetVal}>{v}{k === 'calories' ? '' : 'g'}</div>
                                         </div>
                                     ))}
                                 </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+ 
+                                <div className={styles.aiDietMeals}>
                                     {aiDietPlan.plan.map((meal, idx) => (
-                                        <div key={idx} style={{ padding: '10px', borderLeft: '3px solid var(--accent-purple)', background: 'rgba(255,255,255,0.02)' }}>
-                                            <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '4px' }}>{meal.meal}</div>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{meal.recommendation}</div>
+                                        <div key={idx} className={styles.aiDietMealRow}>
+                                            <div className={styles.aiDietMealName}>{meal.meal}</div>
+                                            <div className={styles.aiDietMealRec}>{meal.recommendation}</div>
                                         </div>
                                     ))}
                                 </div>
-
+ 
                                 <button onClick={handleApplyAITargets} className="btn btn-primary" style={{ width: '100%', marginTop: '20px' }}>
                                     Apply these targets to my tracker
                                 </button>
@@ -1043,51 +1037,53 @@ export default function GymPage() {
                     </div>
                     
                     {/* AI Magic Logger */}
-                    <div style={{ background: 'linear-gradient(145deg, var(--bg-secondary), #2a1538)', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid var(--accent-purple)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                    <div className={styles.aiLoggerBox}>
+                        <div className={styles.aiLoggerTitle}>
                             ✨ AI Magic Logger
                         </div>
-                        <form onSubmit={handleAIDietSubmit} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                            <input className="form-input" placeholder="What did you eat? E.g. '3 eggs and toast'" value={dietSnapText} onChange={(e) => setDietSnapText(e.target.value)} disabled={analyzingDiet} style={{ flex: 1, border: 'none', background: 'var(--bg-card)' }} />
-                            <label className="btn btn-sm" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer', padding: '0 12px' }}>
-                                📸 Photo
-                                <input type="file" accept="image/*" onChange={(e) => handleAIDietSubmit(null, e.target.files[0])} disabled={analyzingDiet} style={{ display: 'none' }} />
-                            </label>
-                            <button type="submit" className="btn btn-sm" disabled={analyzingDiet || !dietSnapText} style={{ background: 'var(--accent-purple)', color: 'white' }}>
-                                {analyzingDiet ? 'Analyzing...' : 'Log'}
-                            </button>
+                        <form onSubmit={handleAIDietSubmit} className={styles.aiLoggerForm}>
+                            <input className={`form-input ${styles.aiLoggerInput}`} placeholder="What did you eat? E.g. '3 eggs and toast'" value={dietSnapText} onChange={(e) => setDietSnapText(e.target.value)} disabled={analyzingDiet} required />
+                            <div className={styles.aiLoggerButtons}>
+                                <label className={styles.aiLoggerPhotoBtn}>
+                                    📸 Photo
+                                    <input type="file" accept="image/*" onChange={(e) => handleAIDietSubmit(null, e.target.files[0])} disabled={analyzingDiet} style={{ display: 'none' }} />
+                                </label>
+                                <button type="submit" className={`btn btn-sm ${styles.aiLoggerSubmitBtn}`} disabled={analyzingDiet || !dietSnapText}>
+                                    {analyzingDiet ? 'Analyzing...' : 'Log'}
+                                </button>
+                            </div>
                         </form>
                     </div>
 
                     <form onSubmit={handleAddDiet} className={styles.dietForm}>
                         <div className={styles.dietFormRow}>
-                            <div className="form-group" style={{ width: '130px' }}>
+                            <div className={`form-group ${styles.formGroupMedium}`}>
                                 <label className="form-label">Meal</label>
                                 <select className="form-select" value={dietForm.meal} onChange={(e) => setDietForm({ ...dietForm, meal: e.target.value })}>
                                     {MEAL_TYPES.map((m) => <option key={m} value={m}>{m}</option>)}
                                 </select>
                             </div>
-                            <div className="form-group" style={{ flex: 1 }}>
+                            <div className={`form-group ${styles.formGroupFlex}`}>
                                 <label className="form-label">Food</label>
                                 <input className="form-input" placeholder="e.g. Chicken breast + rice" value={dietForm.food} onChange={(e) => setDietForm({ ...dietForm, food: e.target.value })} required />
                             </div>
-                            <div className="form-group" style={{ width: '90px' }}>
+                            <div className={`form-group ${styles.formGroupSmall}`}>
                                 <label className="form-label">Calories</label>
                                 <input className="form-input" placeholder="500" value={dietForm.calories} onChange={(e) => setDietForm({ ...dietForm, calories: e.target.value })} />
                             </div>
-                            <div className="form-group" style={{ width: '90px' }}>
+                            <div className={`form-group ${styles.formGroupSmall}`}>
                                 <label className="form-label">Protein</label>
                                 <input className="form-input" placeholder="40g" value={dietForm.protein} onChange={(e) => setDietForm({ ...dietForm, protein: e.target.value })} />
                             </div>
-                            <div className="form-group" style={{ width: '80px' }}>
+                            <div className={`form-group ${styles.formGroupTiny}`}>
                                 <label className="form-label">Carbs</label>
                                 <input className="form-input" placeholder="60g" value={dietForm.carbs} onChange={(e) => setDietForm({ ...dietForm, carbs: e.target.value })} />
                             </div>
-                            <div className="form-group" style={{ width: '70px' }}>
+                            <div className={`form-group ${styles.formGroupTiny}`}>
                                 <label className="form-label">Fats</label>
                                 <input className="form-input" placeholder="15g" value={dietForm.fats} onChange={(e) => setDietForm({ ...dietForm, fats: e.target.value })} />
                             </div>
-                            <button type="submit" className="btn btn-primary btn-sm" style={{ alignSelf: 'flex-end' }} disabled={isFuture}>
+                            <button type="submit" className={`btn btn-primary btn-sm ${styles.formSubmitBtn}`} disabled={isFuture}>
                                 <IoAdd size={18} /> Log
                             </button>
                         </div>
@@ -1222,11 +1218,11 @@ export default function GymPage() {
             )}
             {/* Selected Image Fullscreen Modal */}
             {selectedImage && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <button onClick={() => setSelectedImage(null)} style={{ position: 'absolute', top: '30px', right: '30px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', zIndex: 10000 }}>
-                        <IoCloseCircleOutline size={40} />
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+                    <button onClick={() => setSelectedImage(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', cursor: 'pointer', zIndex: 10000, width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IoCloseCircleOutline size={32} />
                     </button>
-                    <img src={selectedImage} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} alt="Enlarged Progress" />
+                    <img src={selectedImage} style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} alt="Enlarged Progress" />
                 </div>
             )}
             {/* Touch Number Picker Modal */}

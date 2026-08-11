@@ -91,3 +91,30 @@
     border-color: var(--accent-green);
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
 }
+
+@media (max-width: 768px) {
+    .habitsGrid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .analyticsCard {
+        padding: 16px;
+    }
+    
+    .statsRow {
+        gap: 8px;
+    }
+    
+    .statValue {
+        font-size: 1.1rem;
+    }
+    
+    .statLabel {
+        font-size: 0.68rem;
+    }
+    
+    .heatmapGrid {
+        gap: 3px;
+    }
+}

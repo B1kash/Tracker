@@ -73,14 +73,14 @@ export default function Dashboard() {
 
   return (
     <div className={styles.page}>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className={styles.dashboardHeader}>
         <div>
           <h1 className="page-title">
             <span className="page-title-gradient">Dashboard</span>
           </h1>
           <p className="page-subtitle">Track your goals and stay on top of your game</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className={styles.headerActions}>
             <button className="btn" style={{ background: 'var(--accent-purple)', color: 'white', border: 'none' }} onClick={() => setShowAIModal(true)}>
                 Ask Oracle 🔮
             </button>

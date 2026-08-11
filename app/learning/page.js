@@ -164,7 +164,7 @@ export default function LearningPage() {
                         <span className="page-title-gradient">📚 Learning Journal</span>
                     </h1>
                     <p className="page-subtitle">
-                        {loaded => completed}/{goals.length} completed · Log what you learn every day
+                        {completed}/{goals.length} completed · Log what you learn every day
                     </p>
                 </div>
                 <button className="btn btn-primary" onClick={() => { setEditingGoal(null); setGoalForm({ title: '', resource: '', progress: 0, status: 'Not Started' }); setModalOpen(true); }}>
@@ -172,10 +172,10 @@ export default function LearningPage() {
                 </button>
             </div>
 
-            <form onSubmit={handleGenerateCurriculum} style={{ background: 'linear-gradient(135deg, var(--bg-card), #1e1526)', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid var(--accent-purple)', display: 'flex', gap: '10px' }}>
-                <span style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>✨</span>
-                <input className="form-input" placeholder="AI Oracle: What do you want to learn? (e.g. 'Advanced React')" value={aiTopic} onChange={(e) => setAiTopic(e.target.value)} disabled={generatingCurriculum || loading} style={{ flex: 1, border: 'none', background: 'transparent' }} required />
-                <button type="submit" className="btn btn-sm" disabled={generatingCurriculum || !aiTopic} style={{ background: 'var(--accent-purple)', color: 'white', border: 'none' }}>
+            <form onSubmit={handleGenerateCurriculum} className={styles.aiForm}>
+                <span className={styles.aiIcon}>✨</span>
+                <input className={`form-input ${styles.aiInput}`} placeholder="AI Oracle: What do you want to learn? (e.g. 'Advanced React')" value={aiTopic} onChange={(e) => setAiTopic(e.target.value)} disabled={generatingCurriculum || loading} required />
+                <button type="submit" className={`btn btn-sm ${styles.aiSubmitBtn}`} disabled={generatingCurriculum || !aiTopic}>
                     {generatingCurriculum ? 'Generating...' : 'Build Curriculum'}
                 </button>
             </form>
@@ -328,7 +328,7 @@ export default function LearningPage() {
                                     <label className="form-label">Resource Link (optional)</label>
                                     <input className="form-input" value={goalForm.resource} onChange={e => setGoalForm(f => ({ ...f, resource: e.target.value }))} placeholder="https://..." />
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div className={styles.modalGrid}>
                                     <div className="form-group">
                                         <label className="form-label">Progress %</label>
                                         <input className="form-input" type="number" min="0" max="100" value={goalForm.progress} onChange={e => setGoalForm(f => ({ ...f, progress: e.target.value }))} />

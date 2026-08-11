@@ -165,6 +165,11 @@
 }
 
 @media (max-width: 768px) {
+    .headerRow {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 16px;
+    }
     .calendarCard { padding: 16px; }
     .calendarGrid { gap: 3px; }
     .calendarCell { padding: 3px; border-radius: var(--radius-sm); }
@@ -172,4 +177,12 @@
     .indicators { display: none; }
     .legend { gap: 4px; }
     .legendSwatch { width: 12px; height: 12px; }
+    .calendarFooter {
+        flex-direction: column;
+        gap: 12px;
+        padding-top: 12px;
+    }
+    .footerDivider {
+        display: none;
+    }
 }

@@ -63,17 +63,17 @@ export default function MilestoneGoals() {
             <label className="form-label">Goal Title (e.g. 100kg Bench Press)</label>
             <input className="form-input" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required autoFocus />
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
+          <div className={styles.formRow}>
+            <div className={`form-group ${styles.formField}`}>
               <label className="form-label">Target Number</label>
               <input type="number" step="0.1" className="form-input" value={form.targetValue} onChange={e => setForm({ ...form, targetValue: e.target.value })} required />
             </div>
-            <div className="form-group" style={{ flex: 1 }}>
+            <div className={`form-group ${styles.formField}`}>
               <label className="form-label">Deadline</label>
               <input type="date" className="form-input" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} required min={new Date().toISOString().split('T')[0]} />
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+          <div className={styles.actionRow}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsAdding(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary btn-sm">Save Goal</button>
           </div>

@@ -20,7 +20,7 @@ export default function ProgressCardModal({ isOpen, onClose }) {
             const bests = { Bench: 0, Squat: 0, Deadlift: 0 };
             const aliases = {
                 'bench press': 'Bench', 'barbell bench press': 'Bench',
-                'squat': 'Squat', 'barbell squat': 'Squat', 'back squat': 'Squat',
+                'squat': 'Squat', 'barbell squat': 'Squat', 'back squat': 'Squat', 'sqaut': 'Squat',
                 'deadlift': 'Deadlift', 'barbell deadlift': 'Deadlift'
             };
 

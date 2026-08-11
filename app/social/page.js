@@ -132,7 +132,7 @@ export default function SocialPage() {
                                     <IoShieldOutline size={64} color="var(--accent-purple)" />
                                     <h2>You are a Lone Wolf</h2>
                                     <p>Join or create a squad to get weekly cooperative quests.</p>
-                                    <div style={{ display: 'flex', gap: '15px', marginTop: '20px', justifyContent: 'center' }}>
+                                    <div className={styles.buttonGroup}>
                                         <button className="btn btn-primary" onClick={() => setModal({ show: true, mode: 'createSquad', input: '' })}>Create Squad</button>
                                         <button className="btn btn-secondary" onClick={() => setModal({ show: true, mode: 'joinSquad', input: '' })}>Join via Invite</button>
                                     </div>

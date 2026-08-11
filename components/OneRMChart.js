@@ -24,6 +24,7 @@ function extractLiftName(name) {
     for (const lift of CORE_LIFTS) {
         if (lower.includes(lift.toLowerCase())) return lift;
     }
+    if (lower.includes('sqaut')) return 'Squat';
     return null;
 }
 
@@ -81,7 +82,7 @@ export default function OneRMChart({ allWorkouts }) {
         <div className={styles.container}>
             <h2 className={styles.title}>📈 Estimated 1RM Progression</h2>
             <p className={styles.subtitle}>Track your strength gains over time (Epley formula)</p>
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={230}>
                 <LineChart data={chartData} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                     <XAxis

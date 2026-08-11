@@ -8,6 +8,20 @@ import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 export const metadata = {
   title: 'LifeTracker — Personal Goal Tracker',
   description: 'A premium personal life tracker to manage goals across Gym, Learning, and Content Creation.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'LifeTracker',
+  },
+};
+
+export const viewport = {
+  themeColor: '#8b5cf6',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }) {

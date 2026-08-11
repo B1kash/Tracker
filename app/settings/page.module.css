@@ -139,3 +139,346 @@
 .dangerBtn:hover {
     background: rgba(244, 63, 94, 0.2);
 }
+
+.avatarContainer {
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+}
+
+.avatarImage {
+    object-fit: cover;
+}
+
+.cameraIcon {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: var(--accent-purple);
+    border-radius: 50%;
+    padding: 4px;
+    display: flex;
+}
+
+.privacyContainer {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.privacyLabel {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+    text-align: center;
+}
+
+.profileForm {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.securityForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.submitBtn {
+    width: 100%;
+    align-self: stretch;
+    justify-content: center;
+}
+
+.trainSaveBtn {
+    width: 150px;
+    justify-content: center;
+}
+
+.habitSaveBtn {
+    width: 150px;
+    justify-content: center;
+}
+
+.settingGroupTitle {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trainGoalRow {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.trainSelect {
+    max-width: 150px;
+}
+
+.trainHelpText {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+/* Workout preference row */
+.settingRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settingRow:last-child {
+    border-bottom: none;
+}
+
+.settingInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.settingName {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.settingDesc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.settingSelect {
+    width: 150px;
+}
+
+/* iOS Style Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--text-secondary);
+    transition: .3s;
+    border-radius: 50%;
+}
+
+.switch input:checked + .slider {
+    background: var(--gradient-primary);
+    border-color: transparent;
+}
+
+.switch input:checked + .slider:before {
+    transform: translateX(20px);
+    background-color: white;
+}
+
+/* Theme Appearance */
+.themeContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 15px;
+    background: var(--bg-input);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.themeIconText {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.themeLabel {
+    font-weight: 600;
+}
+
+/* Notifications */
+.notificationRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.notificationLabel {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.notificationSub {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.habitReminderLabel {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.habitReminderRow {
+    display: flex;
+    gap: 10px;
+}
+
+.habitTimeInput {
+    max-width: 150px;
+}
+
+.habitHelpText {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+/* Mobile Overrides */
+@media (max-width: 768px) {
+    .page {
+        max-width: 100%;
+        padding-bottom: 30px;
+    }
+
+    .profileRow {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 16px;
+    }
+
+    .privacyContainer {
+        margin-left: 0;
+        width: 100%;
+        margin-top: 10px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 15px;
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .submitBtn {
+        width: 100%;
+        align-self: stretch;
+    }
+
+    .trainSaveBtn {
+        width: 100%;
+    }
+
+    .habitSaveBtn {
+        width: 100%;
+    }
+
+    .trainGoalRow {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .trainSelect {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .settingRowSelect {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .settingSelect {
+        width: 100%;
+    }
+
+    .themeContainer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .themeContainer button {
+        width: 100%;
+    }
+
+    .notificationRow {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+        text-align: left;
+    }
+
+    .notificationRow button {
+        width: 100%;
+    }
+
+    .habitReminderRow {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .habitTimeInput {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .habitReminderRow button {
+        width: 100%;
+    }
+}

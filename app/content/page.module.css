@@ -112,6 +112,11 @@
         gap: 10px;
     }
 
+    .headerRow button {
+        width: 100%;
+        justify-content: center;
+    }
+
     .contentActions {
         opacity: 1;
     }

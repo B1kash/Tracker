@@ -2,6 +2,18 @@
   animation: fadeIn 0.4s ease;
 }
 
+.dashboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+}
+
 .progressSection {
   margin-bottom: 36px;
 }
@@ -115,6 +127,22 @@
 
 /* Mobile responsive */
 @media (max-width: 768px) {
+  .dashboardHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .headerActions {
+    width: 100%;
+  }
+
+  .headerActions button {
+    flex: 1;
+    justify-content: center;
+  }
+
   .ringsContainer {
     gap: 12px;
   }
