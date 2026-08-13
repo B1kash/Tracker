@@ -1,6 +1,8 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const GymWorkout = require('../models/GymWorkout');
 const User = require('../models/User');
+const AIPlan = require('../models/AIPlan');
+const { buildAIContext } = require('../services/aiContextService');
 
 const getAI = () => {
     if (!process.env.GEMINI_API_KEY) {
@@ -361,6 +363,202 @@ Return ONLY a JSON object in this format:
     }
 };
 
+// @desc    Generate Initial AI Plan
+// @route   POST /api/ai/generate-plan
+// @access  Private
+const generatePlan = async (req, res) => {
+    try {
+        const context = await buildAIContext(req.user.id, 'initial-plan');
+        
+        const systemPrompt = `You are a world-class AI fitness and nutrition coach.
+Based on the user's profile and primary goal, generate a highly personalized, structured plan.
+Do NOT attempt to diagnose medical conditions or prescribe dangerous calorie deficits.
+Context:
+${JSON.stringify(context)}
+
+Return ONLY a raw JSON object (no markdown, no \`\`\`json) matching this exact schema:
+{
+  "workoutPlan": {
+    "weeklySchedule": "String",
+    "progressionStrategy": "String",
+    "equipmentAlternatives": "String",
+    "workouts": [
+      {
+        "dayName": "String",
+        "estimatedDuration": "String",
+        "exercises": [ { "name": "String", "sets": 3, "reps": "8-12", "restTime": "90s" } ]
+      }
+    ]
+  },
+  "nutritionPlan": {
+    "dailyCalories": 2000,
+    "proteinTarget": 150,
+    "carbsTarget": 200,
+    "fatsTarget": 70,
+    "mealStructure": "String",
+    "foodSuggestions": ["String"],
+    "hydrationGuidance": "String"
+  },
+  "habitPlan": [
+    { "name": "String", "frequency": "String", "target": "String" }
+  ],
+  "recoveryPlan": {
+    "restDays": "String",
+    "sleepTarget": "String",
+    "mobilitySuggestions": "String"
+  },
+  "explanation": "Short string explaining why this plan is built for them."
+}`;
+
+        const genAI = getAI();
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent(systemPrompt);
+        let responseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(responseText);
+
+        // Deactivate previous plans
+        await AIPlan.updateMany({ user: req.user.id }, { isActive: false });
+
+        // Save new plan
+        const newPlan = await AIPlan.create({
+            user: req.user.id,
+            goal: context.activeGoal ? context.activeGoal._id : null,
+            isActive: true,
+            ...parsed
+        });
+
+        res.status(200).json(newPlan);
+    } catch (error) {
+        console.error('Generate Plan Error:', error);
+        res.status(500).json({ message: 'Failed to generate plan.' });
+    }
+};
+
+const PlanAdjustment = require('../models/PlanAdjustment');
+
+// @desc    Analyze Progress and Recommend Adjustments
+// @route   POST /api/ai/analyze-progress
+// @access  Private
+const analyzeProgress = async (req, res) => {
+    try {
+        const context = await buildAIContext(req.user.id, 'coach');
+        if (!context.activeGoal || !context.userProfile) {
+            return res.status(400).json({ message: 'Missing active goal or profile for analysis.' });
+        }
+
+        const activePlan = await AIPlan.findOne({ user: req.user.id, isActive: true }).lean();
+        if (!activePlan) {
+            return res.status(400).json({ message: 'No active AI plan found.' });
+        }
+
+        const systemPrompt = `You are an adaptive AI fitness coach. Review the user's progress against their current plan and goal.
+Context:
+${JSON.stringify({ ...context, activePlan })}
+
+Your task is to identify if any adjustment is needed. If they are progressing well, do not force an adjustment.
+Return ONLY a raw JSON object matching this exact schema:
+{
+  "summary": "String (Short summary of their progress)",
+  "needsAdjustment": true/false,
+  "proposedAdjustments": [
+    {
+      "category": "workout" | "nutrition" | "habit" | "recovery" | "goal",
+      "reason": "String",
+      "proposedValue": "Any (Describe the specific change, e.g., 'Reduce weekly workouts to 3')",
+      "explanation": "String (Why you recommend this)"
+    }
+  ]
+}`;
+
+        const genAI = getAI();
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent(systemPrompt);
+        let responseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(responseText);
+
+        let createdAdjustments = [];
+        if (parsed.needsAdjustment && parsed.proposedAdjustments.length > 0) {
+            for (const adj of parsed.proposedAdjustments) {
+                const newAdj = await PlanAdjustment.create({
+                    user: req.user.id,
+                    plan: activePlan._id,
+                    category: adj.category,
+                    reason: adj.reason,
+                    proposedValue: adj.proposedValue,
+                    explanation: adj.explanation,
+                    status: 'Pending'
+                });
+                createdAdjustments.push(newAdj);
+            }
+        }
+
+        res.status(200).json({ summary: parsed.summary, adjustments: createdAdjustments });
+    } catch (error) {
+        console.error('Analyze Progress Error:', error);
+        res.status(500).json({ message: 'Failed to analyze progress.' });
+    }
+};
+
+// @desc    Generate Weekly Review
+// @route   GET /api/ai/weekly-review
+// @access  Private
+const weeklyReview = async (req, res) => {
+    try {
+        const context = await buildAIContext(req.user.id, 'weekly-review');
+        
+        const systemPrompt = `You are an AI fitness coach writing a weekly review for the user.
+Context:
+${JSON.stringify(context)}
+
+Write a concise review matching this exact JSON schema:
+{
+  "progress": "String (e.g. 24% toward target)",
+  "wins": ["String"],
+  "needsAttention": ["String"],
+  "recommendation": "String",
+  "nextWeekFocus": "String"
+}`;
+
+        const genAI = getAI();
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent(systemPrompt);
+        let responseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(responseText);
+
+        res.status(200).json(parsed);
+    } catch (error) {
+        console.error('Weekly Review Error:', error);
+        res.status(500).json({ message: 'Failed to generate weekly review.' });
+    }
+};
+
+// @desc    Accept/Reject Plan Adjustment
+// @route   POST /api/ai/adjust-plan/:id
+// @access  Private
+const adjustPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action } = req.body; // 'Accept' or 'Reject'
+
+        const adjustment = await PlanAdjustment.findOne({ _id: id, user: req.user.id });
+        if (!adjustment) return res.status(404).json({ message: 'Adjustment not found' });
+
+        adjustment.status = action === 'Accept' ? 'Accepted' : 'Rejected';
+        await adjustment.save();
+
+        if (action === 'Accept') {
+            // Note: In a full production system, we would programmatically apply the change 
+            // to the active AIPlan here based on the category and proposedValue.
+            // For now, we log the acceptance.
+        }
+
+        res.status(200).json({ message: `Adjustment ${action.toLowerCase()}ed.` });
+    } catch (error) {
+        console.error('Adjust Plan Error:', error);
+        res.status(500).json({ message: 'Failed to adjust plan.' });
+    }
+};
+
 module.exports = {
     getCoachAdvice,
     getRoast,
@@ -370,5 +568,9 @@ module.exports = {
     getDailyBrief,
     getSupplementAdvice,
     generateDietPlan,
-    generateDailyRoutine
+    generateDailyRoutine,
+    generatePlan,
+    analyzeProgress,
+    weeklyReview,
+    adjustPlan
 };

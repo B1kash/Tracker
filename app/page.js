@@ -1,182 +1,178 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IoBarbell, IoBookOutline, IoVideocamOutline, IoTrophyOutline, IoTrendingUp, IoTimeOutline } from 'react-icons/io5';
-import StatsCard from '@/components/StatsCard';
-import ProgressRing from '@/components/ProgressRing';
-import EmptyState from '@/components/EmptyState';
-import WeeklyQuests from '@/components/WeeklyQuests';
-import MilestoneGoals from '@/components/MilestoneGoals';
-import ProgressCardModal from '@/components/ProgressCard';
-import AICoachModal from '@/components/AICoachModal';
-import { getStats, getRecentActivity } from '@/lib/storage';
+import { useRouter } from 'next/navigation';
+import { IoBarbell, IoRestaurantOutline, IoCheckboxOutline, IoTrophyOutline, IoArrowForward } from 'react-icons/io5';
 import PageSkeleton from '@/components/PageSkeleton';
+import ProgressRing from '@/components/ProgressRing';
 import styles from './page.module.css';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState(null);
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [mounted, setMounted] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [showAIModal, setShowAIModal] = useState(false);
+  const router = useRouter();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const [st, act] = await Promise.all([getStats(), getRecentActivity()]);
-        setStats(st);
-        setRecentActivity(act);
+        const token = localStorage.getItem('jwt_token');
+        if (!token) return router.push('/auth');
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${apiUrl}/api/dashboard/today`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          setData(json);
+        }
       } catch (e) {
         console.error("Dashboard error:", e);
       } finally {
-        setMounted(true);
+        setLoading(false);
       }
     }
     fetchDashboard();
-  }, []);
+  }, [router]);
 
-  if (!mounted) return <PageSkeleton type="dashboard" />;
+  if (loading) return <PageSkeleton type="dashboard" />;
 
-  const hasGoals = stats && stats.totalGoals > 0;
+  if (data && !data.user?.onboardingCompleted) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.dashboardHeader}>
+          <h1 className="page-title">Welcome to LifeTracker</h1>
+          <p className="page-subtitle">Let's set up your personalized AI plan.</p>
+        </div>
+        <div className="card" style={{ padding: '40px', textAlign: 'center', marginTop: '40px' }}>
+          <h2>Ready to get started?</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+            We need a little bit of information about your goals and current fitness level.
+          </p>
+          <button 
+            className="btn" 
+            style={{ background: 'var(--text-accent)', color: 'white', border: 'none', padding: '12px 24px', fontSize: '16px' }} 
+            onClick={() => router.push('/onboarding')}
+          >
+            Start Onboarding
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  const getCategoryBadge = (category) => {
-    switch (category) {
-      case 'gym': return 'badge badge-rose';
-      case 'learning': return 'badge badge-purple';
-      case 'content': return 'badge badge-cyan';
-      default: return 'badge badge-purple';
-    }
-  };
-
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'gym': return <IoBarbell />;
-      case 'learning': return <IoBookOutline />;
-      case 'content': return <IoVideocamOutline />;
-      default: return <IoTrendingUp />;
-    }
-  };
-
-  const formatTimeAgo = (dateStr) => {
-    if (!dateStr) return '';
-    const now = new Date();
-    const date = new Date(dateStr);
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
-  };
+  const { goal, plan, workout, nutrition, habits } = data || {};
 
   return (
     <div className={styles.page}>
       <div className={styles.dashboardHeader}>
         <div>
           <h1 className="page-title">
-            <span className="page-title-gradient">Dashboard</span>
+            <span className="page-title-gradient">Today</span>
           </h1>
-          <p className="page-subtitle">Track your goals and stay on top of your game</p>
+          <p className="page-subtitle">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
         <div className={styles.headerActions}>
-            <button className="btn" style={{ background: 'var(--accent-purple)', color: 'white', border: 'none' }} onClick={() => setShowAIModal(true)}>
-                Ask Oracle 🔮
-            </button>
-            <button className="btn btn-secondary" onClick={() => setShowShareModal(true)}>
-                Share Progress ✨
+            <button className="btn" style={{ background: 'var(--accent-purple)', color: 'white', border: 'none' }} onClick={() => router.push('/coach')}>
+                AI Coach 🔮
             </button>
         </div>
       </div>
 
-      {!hasGoals ? (
-        <EmptyState
-          title="Welcome to LifeTracker!"
-          message="Start adding goals in Gym, Learning, or Content Creation to see your progress here."
-        />
-      ) : (
-        <>
-          <div className="stats-grid stagger-children">
-            <StatsCard
-              icon={<IoTrophyOutline size={22} />}
-              label="Total Items"
-              value={stats.totalGoals}
-              subtitle={`${stats.totalCompleted} completed`}
-              gradient="var(--gradient-primary)"
-            />
-            <StatsCard
-              icon={<IoBarbell size={22} />}
-              label="Gym Days"
-              value={stats.gym.totalDays}
-              subtitle={`${stats.gym.totalExercises} exercises`}
-              gradient="var(--gradient-gym)"
-            />
-            <StatsCard
-              icon={<IoBookOutline size={22} />}
-              label="Learning"
-              value={stats.learning.total}
-              subtitle={`${stats.learning.completed} done`}
-              gradient="var(--gradient-learning)"
-            />
-            <StatsCard
-              icon={<IoVideocamOutline size={22} />}
-              label="Content"
-              value={stats.content.total}
-              subtitle={`${stats.content.posted} posted`}
-              gradient="var(--gradient-content)"
-            />
+      <div className="stats-grid stagger-children" style={{ gridTemplateColumns: '1fr', marginBottom: '32px' }}>
+        {/* GOAL SECTION */}
+        <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h3 style={{ fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IoTrophyOutline /> PRIMARY GOAL
+            </h3>
+            <h2 style={{ fontSize: '24px', marginTop: '8px' }}>{goal ? goal.title : 'No active goal'}</h2>
+            {goal && <p style={{ color: 'var(--text-muted)' }}>Target: {goal.targetValue} {goal.unit}</p>}
           </div>
-
-          <div className={styles.progressSection}>
-            <h2 className="section-title">Category Progress</h2>
-            <div className={styles.ringsContainer}>
-              <div className={styles.ringCard}>
-                <ProgressRing percent={stats.gym.percent} size={130} color="gym" label="Gym" />
-              </div>
-              <div className={styles.ringCard}>
-                <ProgressRing percent={stats.learning.percent} size={130} color="learning" label="Learning" />
-              </div>
-              <div className={styles.ringCard}>
-                <ProgressRing percent={stats.content.percent} size={130} color="content" label="Content" />
-              </div>
-            </div>
-          </div>
-
-          {recentActivity.length > 0 && (
-            <div className={styles.activitySection}>
-              <h2 className="section-title">Recent Activity</h2>
-              <div className={styles.activityList}>
-                {recentActivity.map((item, idx) => (
-                  <div key={item.id || idx} className={styles.activityItem}>
-                    <div className={styles.activityIcon}>
-                      {getCategoryIcon(item.category)}
-                    </div>
-                    <div className={styles.activityInfo}>
-                      <span className={styles.activityTitle}>{item.title}</span>
-                      <div className={styles.activityMeta}>
-                        <span className={getCategoryBadge(item.category)}>{item.categoryLabel}</span>
-                        {item.detail && <span className={styles.activityDetail}>{item.detail}</span>}
-                      </div>
-                    </div>
-                    <span className={styles.activityTime}>
-                      <IoTimeOutline size={14} />
-                      {formatTimeAgo(item.updatedAt)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {goal && (
+             <ProgressRing percent={goal.progressPercentage || 0} size={80} color="primary" label={`${goal.progressPercentage || 0}%`} />
           )}
+        </div>
+      </div>
 
-          <MilestoneGoals />
-          <WeeklyQuests />
-          
-          <ProgressCardModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} />
-          <AICoachModal isOpen={showAIModal} onClose={() => setShowAIModal(false)} />
-        </>
-      )}
+      <div className="stats-grid stagger-children" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+        {/* WORKOUT */}
+        <div className="card">
+           <h3 style={{ fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <IoBarbell /> TODAY'S WORKOUT
+            </h3>
+            {workout ? (
+              <>
+                <h4 style={{ fontSize: '18px', marginBottom: '16px' }}>{workout.name || 'Custom Workout'}</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {(workout.exercises || []).slice(0, 3).map((ex, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--bg-input)', padding: '12px', borderRadius: '8px' }}>
+                      <span>{ex.name}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{ex.sets?.length || 0} sets</span>
+                    </div>
+                  ))}
+                  {(workout.exercises || []).length > 3 && (
+                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                      + {(workout.exercises.length - 3)} more exercises
+                    </p>
+                  )}
+                </div>
+                <button className="btn" style={{ width: '100%', marginTop: '24px', background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
+                  Start Workout
+                </button>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Rest Day</p>
+                <button className="btn btn-secondary">Log Custom Workout</button>
+              </div>
+            )}
+        </div>
+
+        {/* NUTRITION */}
+        <div className="card">
+           <h3 style={{ fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <IoRestaurantOutline /> NUTRITION
+            </h3>
+            {nutrition && nutrition.targets ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span>Calories</span>
+                    <span>{nutrition.calories} / {nutrition.targets.dailyCalories || nutrition.targets.calories} kcal</span>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', background: 'var(--bg-input)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min(100, (nutrition.calories / (nutrition.targets.dailyCalories || nutrition.targets.calories)) * 100)}%`, height: '100%', background: 'var(--text-accent)' }}></div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '16px' }}>
+                  <div style={{ textAlign: 'center', background: 'var(--bg-input)', padding: '12px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Protein</div>
+                    <div style={{ fontWeight: '600' }}>{nutrition.protein}g</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>/ {nutrition.targets.proteinTarget || nutrition.targets.protein}g</div>
+                  </div>
+                  <div style={{ textAlign: 'center', background: 'var(--bg-input)', padding: '12px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Carbs</div>
+                    <div style={{ fontWeight: '600' }}>{nutrition.carbs}g</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>/ {nutrition.targets.carbsTarget || nutrition.targets.carbs}g</div>
+                  </div>
+                  <div style={{ textAlign: 'center', background: 'var(--bg-input)', padding: '12px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Fats</div>
+                    <div style={{ fontWeight: '600' }}>{nutrition.fats}g</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>/ {nutrition.targets.fatsTarget || nutrition.targets.fats}g</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p>No nutrition targets set.</p>
+            )}
+            <button className="btn" style={{ width: '100%', marginTop: '24px', background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} onClick={() => router.push('/diet')}>
+              Log Food
+            </button>
+        </div>
+      </div>
     </div>
   );
 }

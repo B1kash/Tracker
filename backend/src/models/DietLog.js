@@ -16,7 +16,9 @@ const DietLogSchema = new mongoose.Schema({
     protein: { type: String },
     carbs: { type: String },
     fats: { type: String },
-    notes: { type: String }
+    notes: { type: String },
+    isAIEstimated: { type: Boolean, default: false },
+    servingSize: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('DietLog', DietLogSchema);

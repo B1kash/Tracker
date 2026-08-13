@@ -55,6 +55,44 @@ const UserSchema = new mongoose.Schema({
         protein: { type: Number, default: 150 },
         carbs: { type: Number, default: 200 },
         fats: { type: Number, default: 70 }
+    },
+    profile: {
+        age: { type: Number },
+        gender: { type: String },
+        unitPreference: { type: String, enum: ['kg/cm', 'lb/ft'], default: 'kg/cm' },
+        country: { type: String },
+        activityLevel: { type: String, enum: ['Sedentary', 'Lightly active', 'Moderately active', 'Very active'] },
+        fitnessExperience: { type: String, enum: ['Beginner', 'Intermediate', 'Advanced'] },
+        trainingDaysPerWeek: { type: Number },
+        preferredWorkoutDuration: { type: String },
+        workoutLocation: { type: String, enum: ['Gym', 'Home', 'Both'] },
+        equipment: [{ type: String }],
+        trainingPreferences: {
+            preferredStyle: { type: String },
+            exercisesEnjoyed: [{ type: String }],
+            exercisesDisliked: [{ type: String }],
+            muscleGroupsPriority: [{ type: String }],
+            cardioPreference: { type: String }
+        },
+        nutritionPreferences: {
+            dietaryPreference: { type: String },
+            allergies: [{ type: String }],
+            foodsAvoided: [{ type: String }],
+            favoriteFoods: [{ type: String }],
+            mealsPerDay: { type: Number },
+            cookingPreference: { type: String },
+            budget: { type: String }
+        },
+        lifestyle: {
+            dailySteps: { type: Number },
+            sleepDuration: { type: String },
+            stressLevel: { type: String },
+            sittingTime: { type: String }
+        },
+        limitations: [{ type: String }],
+        onboardingCompleted: { type: Boolean, default: false },
+        onboardingVersion: { type: String, default: '1.0' },
+        profileUpdatedAt: { type: Date }
     }
 }, { timestamps: true });
 

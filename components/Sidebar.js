@@ -6,7 +6,8 @@ import {
     IoGridOutline, IoBarbell, IoBookOutline, IoVideocamOutline, 
     IoSparkles, IoSunnyOutline, IoMoonOutline, IoCheckboxOutline, 
     IoCalendarOutline, IoLogOutOutline, IoSettingsOutline, 
-    IoScaleOutline, IoPeopleOutline, IoChevronBack, IoChevronForward
+    IoScaleOutline, IoPeopleOutline, IoChevronBack, IoChevronForward,
+    IoTrophyOutline, IoRestaurantOutline
 } from 'react-icons/io5';
 import { useTheme } from './ThemeProvider';
 import { useEffect, useState } from 'react';
@@ -18,9 +19,13 @@ const navGroups = [
     {
         title: null,
         items: [
-            { href: '/', label: 'Overview', icon: IoGridOutline },
-            { href: '/habits', label: 'Habits', icon: IoCheckboxOutline },
-            { href: '/calendar', label: 'Calendar', icon: IoCalendarOutline },
+            { href: '/', label: 'Today', icon: IoGridOutline },
+        ]
+    },
+    {
+        title: 'Goals',
+        items: [
+            { href: '/goals', label: 'My Goal', icon: IoTrophyOutline },
         ]
     },
     {
@@ -31,6 +36,19 @@ const navGroups = [
         ]
     },
     {
+        title: 'Nutrition',
+        items: [
+            { href: '/diet', label: 'Food Log', icon: IoRestaurantOutline },
+        ]
+    },
+    {
+        title: 'Habits',
+        items: [
+            { href: '/habits', label: 'Habits', icon: IoCheckboxOutline },
+            { href: '/calendar', label: 'Calendar', icon: IoCalendarOutline },
+        ]
+    },
+    {
         title: 'Growth',
         items: [
             { href: '/learning', label: 'Learning', icon: IoBookOutline },
@@ -38,11 +56,11 @@ const navGroups = [
         ]
     },
     {
-        title: 'Community',
+        title: 'AI Coach',
         items: [
-            { href: '/social', label: 'Squads', icon: IoPeopleOutline },
+            { href: '/coach', label: 'Coach', icon: IoSparkles },
         ]
-    },
+    }
 ];
 
 const bottomItems = [
