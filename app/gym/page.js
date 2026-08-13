@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     IoAdd, IoTrashOutline, IoCheckmarkSharp, IoAddCircleOutline, IoCloseCircleOutline,
     IoBarbell, IoWalk, IoFastFoodOutline, IoFlameOutline, IoTimerOutline, IoImageOutline, IoCloudUploadOutline,
-    IoListOutline, IoSaveOutline, IoCheckmarkDoneOutline, IoRepeatOutline
+    IoListOutline, IoSaveOutline, IoCheckmarkDoneOutline, IoRepeatOutline, IoCopyOutline
 } from 'react-icons/io5';
 import EmptyState from '@/components/EmptyState';
 import {
@@ -223,6 +223,15 @@ export default function GymPage() {
     
     const [timerEnabled, setTimerEnabled] = useState(true);
     const [pickerState, setPickerState] = useState(null);
+    const [collapsedExercises, setCollapsedExercises] = useState(new Set());
+
+    const toggleExerciseCollapse = (id) => {
+        setCollapsedExercises((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
 
     const toggleTemplateExpand = (id) => {
         setExpandedTemplates((prev) => {
@@ -379,6 +388,23 @@ export default function GymPage() {
         if (willBeCompleted && typeof window !== 'undefined') {
             window.dispatchEvent(new Event('start_rest_timer'));
         }
+    };
+
+    const handleCloneSet = async (exId, setIndex) => {
+        if (!workout) return;
+        const ex = exercises.find((e) => (e._id || e.id) === exId);
+        if (!ex) return;
+        const setToClone = ex.sets[setIndex];
+        const newSet = { reps: setToClone.reps, weight: setToClone.weight, completed: false, _id: mockObjectId() };
+        const newSets = [...ex.sets];
+        newSets.splice(setIndex + 1, 0, newSet);
+        
+        setWorkout(prev => ({ ...prev, exercises: prev.exercises.map(e => (e._id || e.id) === exId ? { ...e, sets: newSets } : e) }));
+        
+        if (setDebounceTimer.current) clearTimeout(setDebounceTimer.current);
+        setDebounceTimer.current = setTimeout(async () => {
+            await updateExerciseSets(dateStr, exId, newSets);
+        }, 750);
     };
 
     // === CARDIO HANDLERS ===
@@ -705,16 +731,32 @@ export default function GymPage() {
                                     Auto Rest Timer
                                 </label>
                             </div>
-                            {exercises.map((ex) => (
+                            {exercises.map((ex) => {
+                                const isCollapsed = collapsedExercises.has(ex._id || ex.id);
+                                const totalExSets = ex.sets.length;
+                                const loggedExSets = ex.sets.filter(s => s.completed).length;
+                                const allLogged = totalExSets > 0 && loggedExSets === totalExSets;
+
+                                return (
                                 <div key={ex._id || ex.id} className="exercise-block">
-                                    <div className="exercise-header">
-                                        <h3 className="exercise-name">{ex.name}</h3>
-                                        <div className="exercise-actions">
+                                    <div className={`exercise-header ${styles.exerciseHeaderInteractive}`} onClick={() => toggleExerciseCollapse(ex._id || ex.id)}>
+                                        <div className={styles.exerciseHeaderTopRow}>
+                                            <h3 className="exercise-name">{ex.name}</h3>
+                                            <div className={styles.exerciseHeaderTopRight}>
+                                                <span className={styles.exerciseSummary}>
+                                                    {totalExSets} sets {isCollapsed && <span>· <span className={allLogged ? styles.textEmerald : ''}>{loggedExSets}/{totalExSets} logged</span></span>}
+                                                </span>
+                                                <button type="button" className="btn-icon" style={{ padding: '2px', margin: 0, opacity: 0.8 }} title={isCollapsed ? "Expand" : "Collapse"}>
+                                                    {isCollapsed ? <IoChevronDownOutline size={18} /> : <IoChevronUpOutline size={18} />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className={`exercise-actions ${styles.exerciseActions}`} onClick={(e) => e.stopPropagation()}>
                                             <button className="btn-ghost" onClick={() => handleAddSet(ex._id || ex.id)} disabled={isFuture}><IoAddCircleOutline size={16} /> Add Set</button>
                                             <button className="btn-icon" onClick={() => handleRemoveExercise(ex._id || ex.id)} disabled={isFuture}><IoTrashOutline size={18} /></button>
                                         </div>
                                     </div>
-                                    {ex.sets.length > 0 && (
+                                    {!isCollapsed && ex.sets.length > 0 && (
                                         <div className={styles.tableWrapper}>
                                             <table className="sets-table">
                                                 <thead>
@@ -757,7 +799,10 @@ export default function GymPage() {
                                                                 />
                                                             </td>
                                                             <td style={{ textAlign: 'center' }}>
-                                                                <button type="button" className="btn-icon" onClick={() => handleRemoveSet(ex._id || ex.id, set._id || set.id)} disabled={isFuture}><IoCloseCircleOutline size={18} /></button>
+                                                                <div className={styles.setActionsDesktop}>
+                                                                    <button type="button" className="btn-icon" onClick={() => handleCloneSet(ex._id || ex.id, idx)} disabled={isFuture} title="Clone set"><IoCopyOutline size={18} /></button>
+                                                                    <button type="button" className="btn-icon" onClick={() => handleRemoveSet(ex._id || ex.id, set._id || set.id)} disabled={isFuture} title="Delete set"><IoTrashOutline size={18} /></button>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -766,7 +811,8 @@ export default function GymPage() {
                                         </div>
                                     )}
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </>
