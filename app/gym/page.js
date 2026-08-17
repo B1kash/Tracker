@@ -223,10 +223,10 @@ export default function GymPage() {
     
     const [timerEnabled, setTimerEnabled] = useState(true);
     const [pickerState, setPickerState] = useState(null);
-    const [collapsedExercises, setCollapsedExercises] = useState(new Set());
+    const [expandedExercises, setExpandedExercises] = useState(new Set());
 
     const toggleExerciseCollapse = (id) => {
-        setCollapsedExercises((prev) => {
+        setExpandedExercises((prev) => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id); else next.add(id);
             return next;
@@ -298,6 +298,9 @@ export default function GymPage() {
         const id = mockObjectId();
         const newEx = { _id: id, id, name, sets: [{ reps: 0, weight: '', completed: false, _id: mockObjectId() }] };
         setWorkout(prev => prev ? { ...prev, exercises: [...prev.exercises, newEx] } : { exercises: [newEx] });
+        
+        // Auto-expand newly added exercises
+        setExpandedExercises(prev => new Set(prev).add(id));
 
         await addExerciseToDate(dateStr, name);
         // Refresh silently just for this component to sync real MongoDB _ids
@@ -305,6 +308,7 @@ export default function GymPage() {
     };
 
     const handleRemoveExercise = async (exId) => {
+        if (!window.confirm("Are you sure you want to delete this exercise?")) return;
         setWorkout(prev => ({ ...prev, exercises: prev.exercises.filter(e => (e._id || e.id) !== exId) }));
         await removeExerciseFromDate(dateStr, exId);
     };
@@ -320,6 +324,7 @@ export default function GymPage() {
     };
 
     const handleRemoveSet = async (exId, setId) => {
+        if (!window.confirm("Are you sure you want to delete this set?")) return;
         const ex = exercises.find((e) => (e._id || e.id) === exId);
         if (!ex) return;
         const newSets = ex.sets.filter((s) => (s._id || s.id) !== setId);
@@ -732,7 +737,8 @@ export default function GymPage() {
                                 </label>
                             </div>
                             {exercises.map((ex) => {
-                                const isCollapsed = collapsedExercises.has(ex._id || ex.id);
+                                const isExpanded = expandedExercises.has(ex._id || ex.id);
+                                const isCollapsed = !isExpanded;
                                 const totalExSets = ex.sets.length;
                                 const loggedExSets = ex.sets.filter(s => s.completed).length;
                                 const allLogged = totalExSets > 0 && loggedExSets === totalExSets;
