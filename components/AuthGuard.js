@@ -7,6 +7,7 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { googleLogin } from '@/lib/storage';
 import LevelUpCelebration from './LevelUpCelebration';
 import RestTimer from './RestTimer';
+import { FiUser, FiLock } from 'react-icons/fi';
 
 export default function AuthGuard({ children }) {
     const [token, setToken] = useState(null);
@@ -76,58 +77,76 @@ export default function AuthGuard({ children }) {
             <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"}>
                 <div className={styles.authContainer}>
                     <div className={styles.authCard}>
-                    <img src="/logo.svg" alt="Life Tracker" className={styles.logo} onError={(e) => e.target.style.display = 'none'} />
-                    <h1 className={styles.authTitle}>Life Tracker</h1>
-                    <p className={styles.authSubtitle}>
-                        {isLogin ? 'Welcome back! Log in to continue.' : 'Create an account to start tracking.'}
-                    </p>
+                        <div className={styles.logoWrapper}>
+                            <img src="/logo.svg" alt="Life Tracker" className={styles.logo} onError={(e) => e.target.style.display = 'none'} />
+                        </div>
+                        <h1 className={styles.authTitle}>Life Tracker</h1>
+                        <p className={styles.authSubtitle}>
+                            {isLogin ? 'Welcome back! Log in to continue your journey.' : 'Create an account to start tracking.'}
+                        </p>
 
-                    <form onSubmit={handleSubmit} className={styles.authForm}>
-                        {error && <div className={styles.errorMessage}>{error}</div>}
+                        <form onSubmit={handleSubmit} className={styles.authForm}>
+                            {error && <div className={styles.errorMessage}>{error}</div>}
 
-                        <div className={styles.inputGroup}>
-                            <label>Username</label>
-                            <input
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                                minLength={3}
-                                placeholder="Enter your username"
+                            <div className={styles.inputGroup}>
+                                <label>Username</label>
+                                <div className={styles.inputWrapper}>
+                                    <FiUser className={styles.inputIcon} />
+                                    <input
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        required
+                                        minLength={3}
+                                        placeholder="Enter your username"
+                                    />
+                                </div>
+                            </div>
+                            <div className={styles.inputGroup}>
+                                <label>Password</label>
+                                <div className={styles.inputWrapper}>
+                                    <FiLock className={styles.inputIcon} />
+                                    <input
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        minLength={6}
+                                        placeholder="Enter your password"
+                                    />
+                                </div>
+                            </div>
+
+                            <button type="submit" className={styles.submitBtn}>
+                                {isLogin ? 'Sign In' : 'Create Account'}
+                            </button>
+                        </form>
+
+                        <div className={styles.divider}>
+                            <span>OR</span>
+                        </div>
+
+                        <div className={styles.googleWrapper}>
+                            <GoogleLogin 
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => setError('Google Login Failed')}
+                                theme="outline"
+                                shape="rectangular"
+                                text={isLogin ? "signin_with" : "signup_with"}
+                                width="300"
                             />
                         </div>
-                        <div className={styles.inputGroup}>
-                            <label>Password</label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={6}
-                                placeholder="Enter your password"
-                            />
-                        </div>
 
-                        <button type="submit" className={styles.submitBtn}>
-                            {isLogin ? 'Login' : 'Register'}
+                        <button
+                            className={styles.toggleBtn}
+                            onClick={() => setIsLogin(!isLogin)}
+                            style={{ marginTop: '1.5rem' }}
+                        >
+                            {isLogin ? "Don't have an account? " : "Already have an account? "}
+                            <span>{isLogin ? "Register" : "Login"}</span>
                         </button>
-                    </form>
-
-                    <button
-                        className={styles.toggleBtn}
-                        onClick={() => setIsLogin(!isLogin)}
-                    >
-                        {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
-                    </button>
-
-                    <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
-                        <GoogleLogin 
-                            onSuccess={handleGoogleSuccess}
-                            onError={() => setError('Google Login Failed')}
-                        />
                     </div>
                 </div>
-            </div>
             </GoogleOAuthProvider>
         );
     }
